@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Electricity Billing System</title>
+
+  <!-- React -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+  <style>
+    body {
+  margin: 0;
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
+  background: linear-gradient(120deg, #e3f2fd, #f4f6f9);
+}
+
+.app {
+  max-width: 1100px;
+  margin: auto;
+  padding: 20px;
+}
+
+/* ================= HEADER ================= */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(90deg, #0d47a1, #1976d2);
+  color: white;
+  padding: 15px 25px;
+  border-radius: 10px;
+  margin-bottom: 25px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+.header .company {
+  font-size: 22px;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.header .role {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.header button {
+  background: white;
+  color: #0d47a1;
+  border: none;
+  padding: 7px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* ================= CARD ================= */
+.card {
+  background: white;
+  padding: 25px;
+  border-radius: 14px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+  margin-bottom: 25px;
+}
+
+.card h2,
+.card h3 {
+  margin-top: 0;
+  color: #0d47a1;
+}
+
+/* ================= INPUTS ================= */
+input, select {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+
+/* ================= BUTTONS ================= */
+button {
+  background: #1976d2;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+button:hover {
+  background: #125ea8;
+}
+
+/* ================= BILL ================= */
+.bill {
+  background: #f9fbff;
+  border-left: 5px solid #1976d2;
+  padding: 18px;
+  margin-top: 18px;
+  border-radius: 8px;
+}
+
+.bill p {
+  margin: 6px 0;
+  font-size: 14px;
+}
+
+/* ================= DUE ================= */
+.due {
+  font-weight: bold;
+  font-style: italic;
+  color: #d32f2f;
+  font-size: 15px;
+}
+
+/* ================= ADMIN LIST ================= */
+.list-item {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script src="App.js"></script>
+</body>
+</html>
