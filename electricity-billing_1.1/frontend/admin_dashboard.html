@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/admin.js" defer></script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="company">ADMIN PORTAL</div>
+            <button onclick="logout()">Logout</button>
+        </div>
+
+        <div class="card">
+            <h3>Options</h3>
+            <button onclick="loadEmployees()">View Employees</button>
+            <button onclick="loadConsumers()">View Consumers</button>
+            <button onclick="showAddEmployee()">Add New Employee</button>
+        </div>
+
+        <!-- ADD EMPLOYEE FORM -->
+        <div class="card hidden" id="addEmployeeArea">
+            <h3>Create New Employee</h3>
+            <input type="text" id="empName" placeholder="Name"
+                oninput="this.value = this.value.charAt(0).toUpperCase() + this.value.slice(1).toLowerCase()">
+            <input type="text" id="empEmail" placeholder="Email">
+            <input type="password" id="empPassword" placeholder="Password">
+            <input type="text" id="empMobile" placeholder="Mobile">
+            <select id="empZone">
+                <option value="">Select Zone</option>
+                <option value="North">North</option>
+                <option value="South">South</option>
+                <option value="East">East</option>
+                <option value="West">West</option>
+            </select>
+            <button onclick="registerEmployee()">Create</button>
+        </div>
+
+        <!-- LIST AREA -->
+        <div class="card" id="listArea">
+            <!-- Dynamic Content -->
+        </div>
+
+    </div>
+    <script>
+        function logout() {
+            sessionStorage.clear();
+            window.location.href = "index.html";
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Electricity Payment Receipt</title>
+    <link rel="stylesheet" href="css/bill.css">
+</head>
+
+<body>
+    <div class="bill-container">
+        <!-- LEFT SIDEBAR -->
+        <div class="sidebar">
+            <div class="logo-circle">
+                <div class="logo-text">TS<br>NPDCL</div>
+            </div>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <div class="content">
+            <!-- HEADER INFO -->
+            <div class="header-info">
+                <p>tsnpdcl@gmail.com</p>
+                <p>95674 64321 | www.tsnpdcl.com</p>
+                <div class="header-line"></div>
+            </div>
+
+            <!-- TITLE -->
+            <h1 class="bill-title">Electricity Payment Receipt</h1>
+
+            <!-- TABLE 1: PAYMENT DETAILS -->
+            <table class="bill-table">
+                <tr>
+                    <td class="label">Receipt No.:</td>
+                    <td class="value" id="receiptNo">2056-1234</td>
+                </tr>
+                <tr>
+                    <td class="label">Date of Payment:</td>
+                    <td class="value" id="paymentDate">May 15, 2056</td>
+                </tr>
+                <tr>
+                    <td class="label">Customer Name:</td>
+                    <td class="value" id="customerName">Winona Harvey</td>
+                </tr>
+                <tr>
+                    <td class="label">Category / Zone:</td>
+                    <td class="value" id="categoryZone">Domestic / North</td>
+                </tr>
+                <tr>
+                    <td class="label">Amount Paid:</td>
+                    <td class="value" id="amountPaid">$125.00</td>
+                </tr>
+                <tr>
+                    <td class="label">Payment Method:</td>
+                    <td class="value" id="paymentMethod">Credit Card</td>
+                </tr>
+                <tr>
+                    <td class="label">Invoice No.:</td>
+                    <td class="value" id="invoiceNo">2056-5678</td>
+                </tr>
+            </table>
+
+            <!-- TABLE 2: CONSUMPTION DETAILS -->
+            <table class="bill-table mt-20">
+                <tr>
+                    <td class="label">Billing Period:</td>
+                    <td class="value" id="billingPeriod">April 1, 2056 - April 30, 2056</td>
+                </tr>
+                <tr>
+                    <td class="label">Energy Consumed:</td>
+                    <td class="value" id="energyConsumed">450 kWh</td>
+                </tr>
+                <tr>
+                    <td class="label">Rate per kWh:</td>
+                    <td class="value" id="ratePerKwh">$0.25</td>
+                </tr>
+                <tr>
+                    <td class="label">Total Consumption Charge:</td>
+                    <td class="value" id="consumptionCharge">$112.50</td>
+                </tr>
+                <tr>
+                    <td class="label">Fine / Penalty:</td>
+                    <td class="value" id="fineAmount">$10.00</td>
+                </tr>
+                <tr>
+                    <td class="label">Arrears / Due Amount:</td>
+                    <td class="value" id="dueAmount">$0.00</td>
+                </tr>
+                <tr>
+                    <td class="label">Total Payable Amount:</td>
+                    <td class="value" id="totalAmount">$125.00</td>
+                </tr>
+                <tr>
+                    <td class="label">Taxes:</td>
+                    <td class="value" id="taxes">$2.50</td>
+                </tr>
+            </table>
+
+            <!-- FOOTER NOTE -->
+            <p class="footer-note">
+                This receipt confirms payment for electricity services. Thank you for your payment!
+            </p>
+
+            <!-- SIGNATURE SECTION -->
+            <div class="signature-section">
+                <p><strong>TSNPDCL - TELANGANA</strong></p>
+                <div class="signature-line-container">
+                    <span>Authorized Signature:</span>
+                    <div class="signature-line"></div>
+                </div>
+            </div>
+
+            <!-- BOTTOM LINK -->
+            <a href="#" onclick="window.history.back()">Back to Dashboard</a>
+        </div>
+    </div>
+    </div>
+    <script>
+        window.onload = function () {
+            const billData = JSON.parse(sessionStorage.getItem("currentBill"));
+            if (!billData) {
+                alert("No bill data found.");
+                window.location.href = "index.html";
+                return;
+            }
+
+            document.getElementById("receiptNo").innerText = billData.serviceNo + "-" + new Date(billData.billDate).getFullYear();
+            document.getElementById("paymentDate").innerText = new Date().toLocaleDateString(); // Assuming current date as payment date view
+            document.getElementById("customerName").innerText = (billData.userDetails && billData.userDetails.name) ? billData.userDetails.name : (billData.name || "Customer");
+            document.getElementById("categoryZone").innerText = (billData.userDetails) ? (billData.userDetails.category + " / " + billData.userDetails.zone) : "-";
+            document.getElementById("amountPaid").innerText = "INR " + (billData.paidAmount || 0);
+            document.getElementById("paymentMethod").innerText = "Online";
+            document.getElementById("invoiceNo").innerText = billData._id.slice(-8).toUpperCase();
+
+            document.getElementById("billingPeriod").innerText = new Date(billData.previousBillDate || billData.billDate).toLocaleDateString() + " - " + new Date(billData.billDate).toLocaleDateString();
+            // 1. Create the start date object
+            let startDate = new Date(billData.previousBillDate || billData.billDate);
+
+            // 2. Add 15 days to it
+            startDate.setDate(startDate.getDate() + 15);
+
+            // 3. Update the text
+            document.getElementById("billingPeriod").innerText =
+                startDate.toLocaleDateString() + " - " + new Date(billData.billDate).toLocaleDateString();
+            document.getElementById("energyConsumed").innerText = billData.units + " kWh";
+            document.getElementById("ratePerKwh").innerText = "INR " + (billData.billAmount / billData.units).toFixed(2);
+            document.getElementById("consumptionCharge").innerText = "INR " + billData.billAmount;
+            document.getElementById("fineAmount").innerText = "INR " + billData.fineAmount;
+            document.getElementById("dueAmount").innerText = "INR " + (billData.dueAmount || 0);
+            document.getElementById("totalAmount").innerText = "INR " + (billData.totalAmount || 0);
+            document.getElementById("taxes").innerText = "INR 0.00"; // Assuming 0 for now as per backend logic
+        }
+    </script>
+</body>
+
+</html>

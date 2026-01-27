@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>My Bills</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/user.js" defer></script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="company">CONSUMER PORTAL</div>
+            <button onclick="logout()">Logout</button>
+        </div>
+
+        <div class="card" id="billArea">
+            <h3>Loading Bills...</h3>
+        </div>
+    </div>
+    <script>
+        function logout() {
+            sessionStorage.clear();
+            window.location.href = "index.html";
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Employee Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/employee.js" defer></script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="company">METER READER</div>
+            <button onclick="logout()">Logout</button>
+        </div>
+
+        <div class="card">
+            <h3 id="zoneInfo">Access Dashboard</h3>
+            <input type="text" id="serviceNo" placeholder="Consumer Service No">
+            <input type="number" id="currentReading" placeholder="Current Reading">
+            <button onclick="generateBill()">Generate Bill</button>
+        </div>
+
+        <!-- BILL RECEIPT -->
+        <div class="card hidden" id="receiptArea">
+            <h3>Bill Generated Successfully</h3>
+            <div id="receiptContent"></div>
+            <button onclick="clearReceipt()">Close</button>
+        </div>
+    </div>
+    <script>
+        function logout() {
+            sessionStorage.clear();
+            window.location.href = "index.html";
+        }
+        function clearReceipt() {
+            document.getElementById("receiptArea").classList.add("hidden");
+            document.getElementById("serviceNo").value = "";
+            document.getElementById("currentReading").value = "";
+        }
+    </script>
+</body>
+
+</html>
