@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Clock, BookOpen, PlusCircle, AlertTriangle } from 'lucide-react';
 
 export default function Timetable() {
-  const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday','Sunday'];
   
   // Dummy data for the initial schedule
   const [events, setEvents] = useState([
