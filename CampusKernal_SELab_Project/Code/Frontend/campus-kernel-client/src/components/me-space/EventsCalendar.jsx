@@ -1,88 +1,88 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalIcon, MapPin, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, X, Trash2 } from 'lucide-react';
 
-export default function EventsCalendar() {
-  // Logic for the date grid
-  const [currentDay] = useState(10); // Simulating today is March 10th
-  const days = Array.from({ length: 31 }, (_, i) => i + 1);
+export default function EventsCalendar({ events, setEvents }) {
+  const [viewDate, setViewDate] = useState(new Date());
+  const [selectedDay, setSelectedDay] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [form, setForm] = useState({ title: '', time: '', room: '' });
 
-  // Prototype Events (Sub-Module 1.1)
-  const academicEvents = [
-    { id: 1, day: 15, title: 'SE Lab Viva', time: '14:00', room: 'Lab 4' },
-    { id: 2, day: 22, title: 'Unity March Meet', time: '09:00', room: 'Main Gate' },
-  ];
+  const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
+  const firstDay = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay();
+
+  const formatDateKey = (day) => {
+    const d = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
+    return d.toISOString().split('T')[0];
+  };
+
+  const handleSave = (e) => {
+    e.preventDefault();
+    const dateKey = formatDateKey(selectedDay);
+    setEvents([...events, { id: Date.now(), date: dateKey, ...form }]);
+    setIsModalOpen(false);
+    setForm({ title: '', time: '', room: '' });
+  };
 
   return (
-    <div className="p-5 bg-white h-full flex flex-col">
-      {/* 1. Header with Navigation */}
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="font-bold text-slate-800 flex items-center gap-2">
-          <CalIcon size={18} className="text-blue-600" />
-          Events Calendar
-        </h3>
-        <div className="flex gap-2">
-          <button className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 transition-all active:scale-95">
-            <ChevronLeft size={18} />
-          </button>
-          <button className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 transition-all active:scale-95">
-            <ChevronRight size={18} />
-          </button>
+    <div className="p-5 relative min-h-[500px] flex flex-col bg-white">
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="font-bold text-slate-800 italic">Calendar Access</h3>
+        <div className="flex gap-1">
+          <button onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1))} className="p-1 hover:bg-slate-100 rounded"><ChevronLeft size={16}/></button>
+          <button onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1))} className="p-1 hover:bg-slate-100 rounded"><ChevronRight size={16}/></button>
         </div>
       </div>
 
-      {/* 2. Days of the Week Header */}
-      <div className="grid grid-cols-7 gap-1 text-[10px] font-black text-slate-400 text-center uppercase tracking-widest mb-3">
-        <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+      <p className="text-center font-black text-indigo-600 text-[10px] uppercase mb-4 tracking-widest">
+        {viewDate.toLocaleString('default', { month: 'long' })} {viewDate.getFullYear()}
+      </p>
+
+      <div className="grid grid-cols-7 gap-1 text-[9px] font-bold text-slate-400 text-center mb-2 uppercase">
+        {['S','M','T','W','T','F','S'].map(d => <span key={d}>{d}</span>)}
       </div>
 
-      {/* 3. Modern Date Grid */}
-      
-      <div className="grid grid-cols-7 gap-1 mb-6">
-        {days.map((d) => {
-          const isToday = d === currentDay;
-          const hasEvent = academicEvents.some(e => e.day === d);
-
+      <div className="grid grid-cols-7 gap-1">
+        {Array(firstDay).fill(0).map((_, i) => <div key={i} />)}
+        {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(d => {
+          const key = formatDateKey(d);
+          const hasEvent = events.some(e => e.date === key);
           return (
-            <div 
+            <button 
               key={d} 
-              className={`aspect-square flex flex-col items-center justify-center text-xs rounded-xl cursor-pointer transition-all relative
-                ${isToday ? 'bg-blue-600 text-white font-bold shadow-lg ring-4 ring-blue-50' : 'hover:bg-blue-50 text-slate-600'}
-                ${hasEvent && !isToday ? 'text-blue-600 font-bold' : ''}
-              `}
+              onClick={() => { setSelectedDay(d); setIsModalOpen(true); }}
+              className={`aspect-square text-[11px] rounded-lg flex items-center justify-center relative transition-all ${hasEvent ? 'bg-indigo-50 text-indigo-600 font-bold' : 'hover:bg-slate-50 text-slate-600'}`}
             >
               {d}
-              {hasEvent && (
-                <div className={`w-1 h-1 rounded-full absolute bottom-1.5 ${isToday ? 'bg-white' : 'bg-blue-500'}`}></div>
-              )}
-            </div>
+              {hasEvent && <span className="absolute bottom-1 w-1 h-1 bg-indigo-400 rounded-full"></span>}
+            </button>
           );
         })}
       </div>
 
-      {/* 4. Upcoming Agenda Section */}
-      <div className="mt-auto pt-4 border-t border-slate-50">
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Today's Agenda</p>
-        <div className="space-y-3">
-          {academicEvents.filter(e => e.day >= currentDay).slice(0, 2).map(event => (
-            <div key={event.id} className="group cursor-pointer p-2 rounded-xl hover:bg-slate-50 transition-colors">
-              <div className="flex items-start gap-3">
-                <div className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-1 rounded-lg">
-                  {event.day}
-                </div>
-                <div className="flex-1">
-                  <p className="text-xs font-bold text-slate-800 group-hover:text-blue-600 transition-colors">
-                    {event.title}
-                  </p>
-                  <div className="flex items-center gap-3 mt-1 text-[10px] text-slate-400 font-medium">
-                    <span className="flex items-center gap-1"><Clock size={10} /> {event.time}</span>
-                    <span className="flex items-center gap-1"><MapPin size={10} /> {event.room}</span>
-                  </div>
-                </div>
-              </div>
+      {isModalOpen && (
+        <div className="absolute inset-0 bg-white/98 z-20 p-6 flex flex-col animate-in slide-in-from-right-4 duration-300">
+          <div className="flex justify-between items-center mb-6">
+            <h4 className="text-xs font-black uppercase text-slate-400">Manage: {selectedDay} {viewDate.toLocaleString('default', { month: 'short' })}</h4>
+            <button onClick={() => setIsModalOpen(false)}><X size={18} /></button>
+          </div>
+          <form onSubmit={handleSave} className="space-y-3 mb-6">
+            <input type="text" placeholder="Event Title" required value={form.title} onChange={e => setForm({...form, title: e.target.value})} className="w-full p-2.5 bg-slate-50 rounded-xl text-xs outline-none focus:ring-1 ring-indigo-500" />
+            <div className="flex gap-2">
+              <input type="time" required value={form.time} onChange={e => setForm({...form, time: e.target.value})} className="flex-1 p-2.5 bg-slate-50 rounded-xl text-xs" />
+              <input type="text" placeholder="Room" value={form.room} onChange={e => setForm({...form, room: e.target.value})} className="flex-1 p-2.5 bg-slate-50 rounded-xl text-xs" />
             </div>
-          ))}
+            <button type="submit" className="w-full py-3 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-indigo-100">Add Academic Event</button>
+          </form>
+          <div className="flex-1 overflow-y-auto space-y-2">
+             {events.filter(e => e.date === formatDateKey(selectedDay)).map(e => (
+               <div key={e.id} className="p-3 bg-slate-50 rounded-xl flex justify-between items-center">
+                  <div className="text-[11px] font-bold text-slate-800">{e.title} <span className="block text-[9px] text-slate-400 font-medium">{e.time}</span></div>
+                  <button onClick={() => setEvents(events.filter(ev => ev.id !== e.id))} className="text-slate-300 hover:text-red-500"><Trash2 size={14}/></button>
+               </div>
+             ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

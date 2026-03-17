@@ -1,107 +1,67 @@
-import { useState } from 'react';
-import { Clock, BookOpen, PlusCircle, AlertTriangle } from 'lucide-react';
+import React from 'react';
+import { Clock, BookOpen, MapPin } from 'lucide-react';
 
-export default function Timetable() {
-  const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday','Sunday'];
-  
-  // Dummy data for the initial schedule
-  const [events, setEvents] = useState([
-    { id: 1, title: 'Software Engineering Lab', day: 'Tuesday', startTime: '14:00', endTime: '16:00', type: 'Lab' },
-    { id: 2, title: 'Machine Learning', day: 'Wednesday', startTime: '10:00', endTime: '11:30', type: 'Lecture' }
-  ]);
+export default function Timetable({ academicEvents = [] }) {
+  const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-  const [title, setTitle] = useState('');
-  const [day, setDay] = useState('Monday');
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
-  const [type, setType] = useState('Lecture');
-  const [conflictError, setConflictError] = useState('');
-
-  // Function to simulate checking for overlapping classes (Constraint)
-  const checkConflict = (newDay, newStart, newEnd) => {
-    return events.some(event => {
-      if (event.day !== newDay) return false;
-      // Simple string comparison for times works with 24h format (e.g., "14:00" > "10:00")
-      return (newStart >= event.startTime && newStart < event.endTime) || 
-             (newEnd > event.startTime && newEnd <= event.endTime) ||
-             (newStart <= event.startTime && newEnd >= event.endTime);
+  // Helper to get the current week's dates
+  const getWeekDates = () => {
+    const now = new Date();
+    const startOfWeek = now.getDate() - now.getDay() + 1;
+    return daysOfWeek.map((day, index) => {
+      const date = new Date(now.setDate(startOfWeek + index));
+      return { day, dateKey: date.toISOString().split('T')[0] };
     });
   };
 
-  const handleAddEvent = (e) => {
-    e.preventDefault();
-    setConflictError('');
-
-    if (checkConflict(day, startTime, endTime)) {
-      setConflictError('Schedule Conflict! You already have a class during this time.');
-      return;
-    }
-
-    const newEvent = {
-      id: Date.now(),
-      title, day, startTime, endTime, type
-    };
-
-    setEvents([...events, newEvent]);
-    setTitle(''); setStartTime(''); setEndTime('');
-  };
+  const weekDays = getWeekDates();
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">Dynamic Timetable</h2>
-
-      {/* SCHEDULE FORM */}
-      <form onSubmit={handleAddEvent} className="mb-8 bg-blue-50 p-4 rounded-lg border border-blue-100">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-3">
-          <input 
-            type="text" placeholder="Course/Event Title" required
-            value={title} onChange={(e) => setTitle(e.target.value)}
-            className="md:col-span-2 p-2 border rounded focus:ring-2 focus:ring-blue-500"
-          />
-          <select value={day} onChange={(e) => setDay(e.target.value)} className="p-2 border rounded focus:ring-2 focus:ring-blue-500 bg-white">
-            {daysOfWeek.map(d => <option key={d} value={d}>{d}</option>)}
-          </select>
-          <input 
-            type="time" required value={startTime} onChange={(e) => setStartTime(e.target.value)}
-            className="p-2 border rounded focus:ring-2 focus:ring-blue-500"
-          />
-          <input 
-            type="time" required value={endTime} onChange={(e) => setEndTime(e.target.value)}
-            className="p-2 border rounded focus:ring-2 focus:ring-blue-500"
-          />
+    <div className="p-6 bg-white rounded-3xl">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Weekly Overview</h2>
+          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Current Academic Week</p>
         </div>
-        
-        {/* Conflict Error Message */}
-        {conflictError && (
-          <div className="flex items-center gap-2 text-red-600 mb-3 text-sm font-bold">
-            <AlertTriangle size={16} /> {conflictError}
-          </div>
-        )}
+        <div className="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-xl text-xs font-bold">
+          Semester 6 • UoH
+        </div>
+      </div>
 
-        <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center justify-center gap-2 transition-colors">
-          <PlusCircle size={20} /> Add to Schedule
-        </button>
-      </form>
+      {/* HORIZONTAL WEEKLY SCROLL */}
+      <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
+        {weekDays.map(({ day, dateKey }) => {
+          // Filter events passed from the Calendar/Parent that match this date
+          const dayEvents = academicEvents
+            .filter(e => e.date === dateKey)
+            .sort((a, b) => a.time.localeCompare(b.time));
 
-      {/* WEEKLY VIEW GRID */}
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {daysOfWeek.map(d => {
-          const dayEvents = events.filter(e => e.day === d).sort((a, b) => a.startTime.localeCompare(b.startTime));
-          
           return (
-            <div key={d} className="border rounded-lg overflow-hidden bg-gray-50">
-              <div className="bg-slate-800 text-white text-center py-2 font-bold">{d}</div>
-              <div className="p-3 flex flex-col gap-2 min-h-[100px]">
+            <div key={day} className="flex flex-col gap-3">
+              <div className="text-center">
+                <p className="text-[10px] font-black text-slate-400 uppercase mb-1">{day.slice(0, 3)}</p>
+                <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
+                  {dayEvents.length > 0 && <div className="h-full bg-indigo-500 w-full"></div>}
+                </div>
+              </div>
+
+              <div className="space-y-3">
                 {dayEvents.length === 0 ? (
-                  <p className="text-gray-400 text-sm text-center italic mt-4">No classes</p>
+                  <div className="h-24 border-2 border-dashed border-slate-50 rounded-2xl flex items-center justify-center">
+                    <span className="text-[10px] text-slate-300 italic font-bold">Free</span>
+                  </div>
                 ) : (
                   dayEvents.map(event => (
-                    <div key={event.id} className="bg-white p-3 rounded border border-gray-200 shadow-sm border-l-4 border-l-blue-500">
-                      <p className="font-semibold text-gray-800 text-sm truncate" title={event.title}>{event.title}</p>
-                      <div className="flex items-center gap-1 text-xs text-gray-500 mt-2">
-                        <Clock size={12} /> {event.startTime} - {event.endTime}
-                      </div>
+                    <div key={event.id} className="bg-slate-50 p-3 rounded-2xl border border-slate-100 hover:border-indigo-200 transition-all group">
+                      <p className="text-[10px] font-black text-indigo-600 mb-1">{event.time}</p>
+                      <p className="text-[11px] font-bold text-slate-800 leading-tight mb-2 group-hover:text-indigo-600">
+                        {event.title}
+                      </p>
+                      {event.room && (
+                        <div className="flex items-center gap-1 text-[9px] text-slate-400 font-bold">
+                          <MapPin size={10} /> {event.room}
+                        </div>
+                      )}
                     </div>
                   ))
                 )}
