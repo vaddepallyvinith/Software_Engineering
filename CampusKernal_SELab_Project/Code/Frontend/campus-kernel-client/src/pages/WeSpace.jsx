@@ -60,13 +60,13 @@ export default function WeSpace() {
     <div className="space-y-6 pb-12 pr-4 animate-in fade-in duration-500">
       
       {/* 1. HEADER SECTION (Styled like MeSpace) */}
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 bg-blue-50 dark:bg-slate-900 rounded-[2rem] border-l-[8px] border-l-blue-600 dark:border-l-blue-500 shadow-sm transition-all duration-300">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Collaboration Hub</h1>
-          <p className="text-slate-500 font-medium text-sm">Find peers at University of Hyderabad and collaborate.</p>
+          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Collaboration Hub</h1>
+          <p className="text-slate-600 dark:text-slate-400 font-bold text-base mt-1">Find peers at University of Hyderabad and collaborate.</p>
         </div>
-        <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm border border-slate-100 text-sm font-bold text-slate-600">
-           <Globe className="text-indigo-600 animate-pulse" size={18} />
+        <div className="flex items-center gap-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-4 py-2 rounded-full shadow-md border border-slate-100 dark:border-slate-800 text-sm font-bold text-slate-700 dark:text-slate-300 transition-all">
+           <Globe className="text-blue-600 dark:text-blue-500 animate-pulse" size={18} />
            Global Networking • WE Space
         </div>
       </header>
@@ -85,17 +85,17 @@ export default function WeSpace() {
         <div className="lg:col-span-8 space-y-8">
           
           {/* BLOCK 1: PEER DISCOVERY */}
-          <section className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
+          <section className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] shadow-xl shadow-slate-200/20 dark:shadow-none border border-white/50 dark:border-slate-800 p-6 transition-all duration-500">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                <Users className="text-indigo-600" /> Matched Peers
+              <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                <Users className="text-blue-600 dark:text-blue-500" /> Matched Peers
               </h2>
               <div className="relative w-64">
                 <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
                 <input 
                   type="text" 
                   placeholder="Search skills..." 
-                  className="w-full pl-10 pr-4 py-2 bg-slate-50 rounded-xl text-xs outline-none"
+                  className="w-full pl-10 pr-4 py-2 bg-slate-100/50 dark:bg-slate-800/50 rounded-xl text-xs dark:text-white outline-none border border-transparent dark:focus:border-slate-700 focus:ring-2 focus:ring-blue-500/50 transition-all"
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
@@ -113,26 +113,26 @@ export default function WeSpace() {
           </section>
 
           {/* BLOCK 2: STUDY ROOMS */}
-          <section className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
+          <section className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] shadow-xl shadow-slate-200/20 dark:shadow-none border border-white/50 dark:border-slate-800 p-6 transition-all duration-500">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                <Video className="text-purple-600" /> Study Rooms
+              <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                <Video className="text-purple-600 dark:text-purple-500" /> Study Rooms
               </h2>
-              <button className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2">
+              <button className="bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all hover:-translate-y-0.5 active:scale-95">
                 <PlusCircle size={16} /> Create Room
               </button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {rooms.map(room => (
-                <div key={room.id} className="p-5 border border-slate-50 rounded-2xl bg-slate-50/30">
+                <div key={room.id} className="group p-5 border border-slate-100 dark:border-slate-700/50 rounded-2xl bg-slate-50/50 dark:bg-slate-800/30 hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/10">
                   <div className="flex justify-between text-[10px] font-bold uppercase text-slate-400 mb-2">
                     <span>{room.category}</span>
                     <span>{room.participants}/{room.max}</span>
                   </div>
-                  <h3 className="font-bold text-slate-800 mb-4">{room.topic}</h3>
+                  <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-4 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{room.topic}</h3>
                   <button 
                     onClick={() => setActiveRoom(room)}
-                    className="w-full py-2 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-bold hover:bg-indigo-600 hover:text-white transition-all"
+                    className="w-full py-2 bg-slate-100 dark:bg-slate-800/50 text-orange-600 dark:text-orange-400 rounded-xl text-xs font-bold hover:bg-gradient-to-r hover:from-orange-500 hover:to-amber-500 hover:text-white transition-all shadow-sm active:scale-95"
                   >
                     Join Room
                   </button>
@@ -146,31 +146,31 @@ export default function WeSpace() {
         <div className="lg:col-span-4 space-y-8">
           
           {/* BLOCK 3: CONNECTION REQUESTS */}
-          <section className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
-            <h2 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
-              <Zap className="text-indigo-600" size={16} /> Connection Requests
+          <section className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] shadow-xl shadow-slate-200/20 dark:shadow-none border border-white/50 dark:border-slate-800 p-6 transition-all duration-500">
+            <h2 className="text-sm font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+              <Zap className="text-blue-600 dark:text-blue-500" size={16} /> Connection Requests
             </h2>
             <div className="space-y-3">
               {peers.filter(p => p.connectionStatus === 'received').map(p => (
-                <div key={p.id} className="p-3 bg-slate-50 rounded-2xl flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-700">{p.name}</span>
-                  <button className="px-3 py-1 bg-indigo-600 text-white rounded-lg text-[10px] font-bold">Accept</button>
+                <div key={p.id} className="p-3 bg-slate-50/50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50 rounded-2xl flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{p.name}</span>
+                  <button className="px-3 py-1 bg-gradient-to-r from-orange-500 to-amber-500 shadow-md shadow-orange-500/20 text-white rounded-lg text-[10px] font-bold hover:shadow-orange-500/40 transition-shadow active:scale-95">Accept</button>
                 </div>
               ))}
             </div>
           </section>
 
           {/* BLOCK 4: RECENT COLLABORATIONS / CHATS */}
-          <section className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
-            <h2 className="text-sm font-bold text-slate-800 mb-4">Collaborators</h2>
+          <section className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] shadow-xl shadow-slate-200/20 dark:shadow-none border border-white/50 dark:border-slate-800 p-6 transition-all duration-500">
+            <h2 className="text-sm font-bold text-slate-900 dark:text-white mb-4">Collaborators</h2>
             <div className="space-y-4">
               {peers.filter(p => p.connectionStatus === 'connected').map(p => (
                 <div key={p.id} className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-[10px] font-bold text-indigo-600">
+                  <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center text-[10px] font-bold text-blue-600 dark:text-blue-400">
                     {p.name[0]}
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs font-bold text-slate-800">{p.name}</p>
+                    <p className="text-xs font-bold text-slate-900 dark:text-white">{p.name}</p>
                     <p className="text-[10px] text-slate-400">Online</p>
                   </div>
                 </div>

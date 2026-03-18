@@ -6,7 +6,7 @@ export default function MeSpace() {
   return (
     <div className="space-y-8 pb-12">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-8 rounded-2xl shadow-lg">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-8 rounded-2xl shadow-lg">
         <h1 className="text-3xl font-bold mb-2">Academic Dashboard</h1>
         <p className="text-blue-100 opacity-90">Welcome, Vinith. Here is your current academic standing.</p>
       </div>

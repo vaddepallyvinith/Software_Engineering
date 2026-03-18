@@ -30,7 +30,7 @@ export default function Register() {
             <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Academic Interests (Tags)</label>
             <input type="text" placeholder="e.g. Machine Learning, Python, UI Design" className="p-3 border rounded-lg w-full focus:ring-2 focus:ring-blue-500 outline-none" />
           </div>
-          <button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 mt-4">
+          <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 mt-4">
             <UserPlus size={20} /> Create Student Profile
           </button>
         </form>

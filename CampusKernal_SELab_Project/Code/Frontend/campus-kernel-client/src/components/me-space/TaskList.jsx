@@ -58,12 +58,12 @@ export default function TaskList() {
   };
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">Academic Task Tracker</h2>
+    <div className="p-4 md:p-8">
+      <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-6 border-b border-slate-100 dark:border-slate-800 pb-4 tracking-tight">Academic Task Tracker</h2>
       
       {/* ADD TASK FORM */}
       
-      <form onSubmit={handleAddTask} className="mb-8 bg-gray-50 p-4 rounded-lg border border-gray-200">
+      <form onSubmit={handleAddTask} className="mb-8 grid grid-cols-1 bg-slate-50/50 dark:bg-slate-800/30 p-5 rounded-[1.5rem] border border-slate-100 dark:border-slate-700/50">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <input 
             type="text" 
@@ -71,7 +71,7 @@ export default function TaskList() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
-            className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 rounded-xl text-sm outline-none bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-orange-500/50 transition-all dark:text-white"
           />
           <input 
             type="text" 
@@ -79,19 +79,19 @@ export default function TaskList() {
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             required
-            className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 rounded-xl text-sm outline-none bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-orange-500/50 transition-all dark:text-white"
           />
           <input 
             type="datetime-local" 
             value={deadline}
             onChange={(e) => setDeadline(e.target.value)}
             required // Enforces the constraint that every task must have a deadline
-            className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
+            className="w-full p-3 rounded-xl text-sm outline-none bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-orange-500/50 transition-all dark:text-white text-slate-600 dark:text-slate-300"
           />
           <select 
             value={priority}
             onChange={(e) => setPriority(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            className="w-full p-3 rounded-xl text-sm outline-none bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-orange-500/50 transition-all dark:text-white"
           >
             {/* Enforces the constraint of predefined priority levels */}
             <option value="High">High Priority</option>
@@ -101,7 +101,7 @@ export default function TaskList() {
         </div>
         <button 
           type="submit" 
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center justify-center gap-2 transition-colors"
+          className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-3 px-4 rounded-xl shadow-md shadow-orange-500/30 hover:shadow-orange-500/50 flex items-center justify-center gap-2 transition-all active:scale-95 mt-2"
         >
           <PlusCircle size={20} />
           Add Task
@@ -116,20 +116,20 @@ export default function TaskList() {
           return (
             <div 
               key={task.id} 
-              className={`p-4 rounded-lg border transition-all ${
-                overdue ? 'bg-red-50 border-red-300' : 'bg-white border-gray-200 hover:shadow-md'
+              className={`p-5 rounded-2xl border transition-all duration-300 ${
+                overdue ? 'bg-red-50/50 dark:bg-red-900/10 border-red-300 dark:border-red-500/30' : 'bg-white/50 dark:bg-slate-800/30 border-slate-200 dark:border-slate-700/50 hover:border-orange-300 dark:hover:border-orange-500 hover:shadow-lg hover:shadow-orange-500/10'
               }`}
             >
-              <div className="flex justify-between items-start mb-2">
-                <h3 className={`font-semibold text-lg ${overdue ? 'text-red-700' : 'text-gray-800'}`}>
+              <div className="flex justify-between items-start mb-3">
+                <h3 className={`font-semibold text-lg ${overdue ? 'text-red-700 dark:text-red-400' : 'text-slate-900 dark:text-white'}`}>
                   {task.title}
                 </h3>
-                <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getPriorityColor(task.priority)}`}>
+                <span className={`px-3 py-1 rounded-full text-[10px] uppercase tracking-widest font-black border ${getPriorityColor(task.priority)}`}>
                   {task.priority}
                 </span>
               </div>
-              <p className="text-sm font-medium text-gray-500 mb-3">{task.subject}</p>
-              <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-4">{task.subject}</p>
+              <div className="flex flex-wrap gap-4 text-xs font-bold text-slate-600 dark:text-slate-300">
                 <span className="flex items-center gap-1.5">
                   <Calendar className="w-4 h-4" />
                   {new Date(task.deadline).toLocaleString()}
