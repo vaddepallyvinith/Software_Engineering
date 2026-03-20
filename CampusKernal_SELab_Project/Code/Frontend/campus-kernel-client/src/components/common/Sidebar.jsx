@@ -4,7 +4,7 @@ import { useTheme } from '../../context/ThemeContext';
 
 export default function Sidebar() {
   const location = useLocation();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme, increaseTextSize, decreaseTextSize } = useTheme();
   
   const menuItems = [
     { name: 'ME Space', path: '/', icon: <LayoutDashboard size={20} /> },
@@ -14,14 +14,24 @@ export default function Sidebar() {
 
   return (
     <div className="w-64 bg-gradient-to-b from-blue-900 to-slate-950 dark:from-slate-950 dark:to-slate-950 border-r-[6px] border-r-orange-500 text-white min-h-screen flex flex-col p-4 fixed left-0 top-0 transition-all shadow-2xl z-50">
-      <div className="mb-10 px-2 flex justify-between items-start">
+      <div className="mb-10 px-2 flex flex-col gap-4">
         <div>
           <h1 className="text-2xl font-black tracking-tighter text-white drop-shadow-md">CAMPUS KERNEL</h1>
           <p className="text-[10px] text-red-500 uppercase font-bold tracking-widest mt-1">Unified Ecosystem</p>
         </div>
-        <button onClick={toggleTheme} className="p-2 -mt-1 rounded-full hover:bg-white/10 dark:hover:bg-slate-800 transition-colors focus:ring-2 focus:ring-red-500 focus:outline-none">
-          {theme === 'dark' ? <Sun size={18} className="text-yellow-400" /> : <Moon size={18} className="text-slate-300" />}
-        </button>
+        
+        <div className="flex items-center gap-1 bg-black/20 dark:bg-slate-900/80 p-1.5 rounded-full border border-white/10 inline-flex w-fit backdrop-blur-sm self-start">
+          <button onClick={decreaseTextSize} className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10 transition-colors" title="Decrease Text Size">
+            A-
+          </button>
+          <button onClick={increaseTextSize} className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-slate-300 hover:text-white hover:bg-white/10 transition-colors" title="Increase Text Size">
+            A+
+          </button>
+          <div className="w-px h-5 bg-white/20 mx-1"></div>
+          <button onClick={toggleTheme} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors focus:ring-2 focus:ring-red-500 focus:outline-none">
+            {theme === 'dark' ? <Sun size={16} className="text-yellow-400" /> : <Moon size={16} className="text-slate-300" />}
+          </button>
+        </div>
       </div>
 
       <nav className="flex-1 space-y-2">
