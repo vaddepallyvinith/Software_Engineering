@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Send, Search, MoreVertical, Phone, Video, CheckCheck, PlusCircle } from 'lucide-react';
+import { Send, Search, MoreVertical, Phone, Video, CheckCheck, PlusCircle, MessageSquare } from 'lucide-react';
 
 export default function Messages() {
   const [activeChat, setActiveChat] = useState(1);
@@ -34,7 +34,22 @@ export default function Messages() {
   };
 
   return (
-    <div className="h-[calc(100vh-120px)] bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] shadow-xl shadow-slate-200/20 dark:shadow-none border border-white/50 dark:border-slate-800 overflow-hidden flex transition-all duration-500">
+    <div className="space-y-6 pb-12 pr-4 animate-in fade-in duration-500">
+      
+      {/* 1. HEADER SECTION */}
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 bg-blue-50 dark:bg-slate-900 rounded-[2rem] border-l-[8px] border-l-blue-600 dark:border-l-blue-500 shadow-sm transition-all duration-300">
+        <div>
+          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Direct Messages</h1>
+          <p className="text-slate-600 dark:text-slate-400 font-bold text-base mt-1">Connect with your peers seamlessly.</p>
+        </div>
+        <div className="flex items-center gap-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-5 py-2.5 rounded-2xl shadow-md border border-slate-100 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 transition-all">
+           <MessageSquare className="text-cyan-600 dark:text-cyan-500" size={16} />
+           Instant Chat • UoH Network
+        </div>
+      </header>
+
+      {/* 2. CHAT INTERFACE */}
+      <div className="h-[calc(100vh-200px)] bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] shadow-xl shadow-slate-200/20 dark:shadow-none border border-white/50 dark:border-slate-800 overflow-hidden flex transition-all duration-500">
       
       {/* --- CONTACT LIST SIDEBAR --- */}
       <div className="w-80 border-r border-slate-100 dark:border-slate-800 flex flex-col bg-white/50 dark:bg-slate-900/50">
@@ -137,6 +152,7 @@ export default function Messages() {
           </button>
         </form>
       </div>
+    </div>
     </div>
   );
 }
