@@ -3,6 +3,7 @@ import Sidebar from './components/common/Sidebar';
 import MeSpace from './pages/MeSpace';
 import WeSpace from './pages/WeSpace';
 import Messages from './pages/Messages';
+import Settings from './pages/Settings';
 import { ThemeProvider } from './context/ThemeContext';
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
               <Route path="/" element={<MeSpace />} />
               <Route path="/we-space" element={<WeSpace />} />
               <Route path="/messages" element={<Messages />} />
+              <Route path="/settings" element={<Settings />} />
             </Routes>
           </main>
         </div>

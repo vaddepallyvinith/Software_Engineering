@@ -19,31 +19,51 @@ export default function MeSpace() {
   return (
     <div className="space-y-6 pb-12 pr-4 animate-in fade-in duration-500">
       
-      {/* 1. HEADER SECTION */}
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 bg-blue-50 dark:bg-slate-900 rounded-[2rem] border-l-[8px] border-l-blue-600 dark:border-l-blue-500 shadow-sm transition-all duration-300">
-        <div>
-          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Academic Workspace</h1>
-          <p className="text-slate-600 dark:text-slate-400 font-bold text-base mt-1">Welcome back, Vinith. Here is your Semester 6 overview.</p>
+      {/* 1. HERO BANNER - WeSpace Style */}
+      <div className="relative overflow-hidden bg-slate-900 rounded-[3rem] p-8 md:p-12 mb-8 border border-white/10 shadow-2xl group">
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.05]"></div>
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-cyan-500/30 rounded-full blur-[100px] group-hover:bg-teal-500/30 transition-colors duration-1000"></div>
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-blue-500/20 rounded-full blur-[100px]"></div>
+        
+        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+          <div className="max-w-xl">
+            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/10 mb-6 shadow-sm shadow-blue-500/10">
+              <GraduationCap size={14} className="text-cyan-400 animate-pulse" />
+              <span className="text-xs font-bold text-slate-300 tracking-widest uppercase">Personal Academic HQ</span>
+            </div>
+            <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter mb-4 leading-tight">
+              Master Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-teal-400">Semester.</span>
+            </h1>
+            <p className="text-slate-400 font-medium text-lg max-w-md leading-relaxed">
+              Track your performance, organize your timetable, and crush your academic goals at UoH.
+            </p>
+          </div>
+          
+          <div className="w-full md:w-auto flex flex-col items-center justify-center py-6 px-10 bg-white/5 backdrop-blur-xl rounded-[2rem] border border-white/10 shadow-2xl relative z-20 hover:scale-105 transition-transform duration-500">
+             <div className="absolute inset-0 rounded-[2rem] border border-cyan-500/30 animate-pulse" style={{ animationDuration: '3s' }}></div>
+             <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-cyan-400 to-blue-500 mb-2 drop-shadow-lg">8.42</div>
+             <div className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+               <BarChart3 size={14} className="text-cyan-500" /> Current CGPA
+             </div>
+          </div>
         </div>
-        <div className="flex items-center gap-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-5 py-2.5 rounded-2xl shadow-md border border-slate-100 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 transition-all">
-           <GraduationCap className="text-cyan-600 dark:text-cyan-500" size={16} />
-           University of Hyderabad • B.Tech CSE
-        </div>
-      </header>
+      </div>
 
       {/* 2. STATS OVERVIEW */}
-      <StatsOverview taskCount={academicEvents.length} overdueCount="2" cgpa="8.42" />
+      <div className="relative z-20 -mt-14 mb-10 px-4 md:px-8">
+        <StatsOverview taskCount={academicEvents.length} overdueCount="2" cgpa="8.42" />
+      </div>
 
       {/* 3. TAB NAVIGATION */}
-      <div className="flex p-1.5 bg-slate-200/50 dark:bg-slate-900/50 backdrop-blur-md shadow-inner rounded-2xl w-fit border border-white/20 dark:border-slate-800">
-        <button onClick={() => setActiveTab('events')} className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${activeTab === 'events' ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/30 transform scale-[1.02]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-800/50'}`}>
-          <CalIcon size={16} /> Events & Timetable
+      <div className="flex flex-wrap p-2 bg-slate-100 dark:bg-slate-900/80 backdrop-blur-xl shadow-lg rounded-[2rem] w-full md:w-fit border border-slate-200 dark:border-white/10 mb-8 gap-2 relative z-20">
+        <button onClick={() => setActiveTab('events')} className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl text-sm font-bold transition-all duration-300 ${activeTab === 'events' ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10'}`}>
+          <CalIcon size={18} /> Timetable
         </button>
-        <button onClick={() => setActiveTab('performance')} className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${activeTab === 'performance' ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/30 transform scale-[1.02]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-800/50'}`}>
-          <BarChart3 size={16} /> Performance
+        <button onClick={() => setActiveTab('performance')} className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl text-sm font-bold transition-all duration-300 ${activeTab === 'performance' ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10'}`}>
+          <BarChart3 size={18} /> Performance
         </button>
-        <button onClick={() => setActiveTab('tasks')} className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${activeTab === 'tasks' ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/30 transform scale-[1.02]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-800/50'}`}>
-          <ListTodo size={16} /> Tasks
+        <button onClick={() => setActiveTab('tasks')} className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl text-sm font-bold transition-all duration-300 ${activeTab === 'tasks' ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10'}`}>
+          <ListTodo size={18} /> Tasks
         </button>
       </div>
 

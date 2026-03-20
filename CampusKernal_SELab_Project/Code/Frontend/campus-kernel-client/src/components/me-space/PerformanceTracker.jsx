@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
 import { TrendingUp, Award, Lock, Plus } from 'lucide-react';
 
+// Grading scale map for calculation
+const gradePoints = { 'O': 10, 'A+': 9, 'A': 8, 'B+': 7, 'B': 6, 'C': 5, 'F': 0 };
+
 export default function PerformanceTracker() {
-  // Grading scale map for calculation
-  const gradePoints = { 'O': 10, 'A+': 9, 'A': 8, 'B+': 7, 'B': 6, 'C': 5, 'F': 0 };
 
   const [records, setRecords] = useState([
     { id: 1, subject: 'Data Structures', credits: 4, grade: 'A+', semester: 1, finalized: true },
