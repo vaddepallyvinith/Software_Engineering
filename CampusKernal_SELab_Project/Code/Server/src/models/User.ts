@@ -25,6 +25,32 @@ export interface IUser extends Document {
     avatar?: string;         // URL to profile picture (set later via upload)
   };
 
+  // Me Space Dynamic Entities
+  cgpa: number;
+  tasks: Array<{
+    _id?: mongoose.Types.ObjectId;
+    title: string;
+    subject: string;
+    deadline: Date;
+    priority: 'High' | 'Medium' | 'Low';
+    status: 'Not Started' | 'In Progress' | 'Completed';
+  }>;
+  events: Array<{
+    _id?: mongoose.Types.ObjectId;
+    date: string;
+    title: string;
+    time: string;
+    room: string;
+  }>;
+  records: Array<{
+    _id?: mongoose.Types.ObjectId;
+    subject: string;
+    credits: number;
+    grade: string;
+    semester: number;
+    finalized: boolean;
+  }>;
+
   // Account status — used to gate features until email is verified (future sprint)
   isVerified: boolean;
 
@@ -106,6 +132,34 @@ const UserSchema: Schema<IUser> = new Schema(
         type: String,        // Will store a URL (e.g. from Cloudinary) set after registration
       },
     },
+
+    // ── Me Space Dynamic Data (Tasks, Events, Performance) ───────────────
+    cgpa: {
+      type: Number,
+      default: 0.0,
+      min: 0,
+      max: 10
+    },
+    tasks: [{
+      title: { type: String, required: true },
+      subject: { type: String, required: true },
+      deadline: { type: Date, required: true },
+      priority: { type: String, enum: ['High', 'Medium', 'Low'], default: 'Medium' },
+      status: { type: String, enum: ['Not Started', 'In Progress', 'Completed'], default: 'Not Started' }
+    }],
+    events: [{
+      date: { type: String, required: true },
+      title: { type: String, required: true },
+      time: { type: String, required: true },
+      room: { type: String, default: '' },
+    }],
+    records: [{
+      subject: { type: String, required: true },
+      credits: { type: Number, required: true },
+      grade: { type: String, required: true },
+      semester: { type: Number, required: true },
+      finalized: { type: Boolean, default: false }
+    }],
 
     // ── Account Status ──────────────────────────────────────────────────────
     isVerified: {

@@ -1,26 +1,54 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus, X, Trash2 } from 'lucide-react';
+import api from '../../services/api';
 
-export default function EventsCalendar({ events, setEvents }) {
+export default function EventsCalendar({ initialEvents = [], onUpdate }) {
   const [viewDate, setViewDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form, setForm] = useState({ title: '', time: '', room: '' });
+  const [loading, setLoading] = useState(false);
 
   const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
   const firstDay = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay();
 
   const formatDateKey = (day) => {
     const d = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
-    return d.toISOString().split('T')[0];
+    const tzOffset = d.getTimezoneOffset() * 60000;
+    const localISOTime = (new Date(d.getTime() - tzOffset)).toISOString().split('T')[0];
+    return localISOTime;
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
+    setLoading(true);
     const dateKey = formatDateKey(selectedDay);
-    setEvents([...events, { id: Date.now(), date: dateKey, ...form }]);
-    setIsModalOpen(false);
-    setForm({ title: '', time: '', room: '' });
+    
+    try {
+      const newEvent = { date: dateKey, title: form.title, time: form.time, room: form.room };
+      const updatedEvents = [...initialEvents, newEvent];
+      
+      await api.put('/me/update', { events: updatedEvents });
+      
+      setForm({ title: '', time: '', room: '' });
+      if (onUpdate) onUpdate();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to add event');
+    } finally {
+      setLoading(false);
+      setIsModalOpen(false);
+    }
+  };
+
+  const handleDelete = async (eventId) => {
+    try {
+      const updatedEvents = initialEvents.filter(e => e._id !== eventId && e.id !== eventId);
+      await api.put('/me/update', { events: updatedEvents });
+      if (onUpdate) onUpdate();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
@@ -50,7 +78,7 @@ export default function EventsCalendar({ events, setEvents }) {
         {Array(firstDay).fill(0).map((_, i) => <div key={i} />)}
         {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(d => {
           const key = formatDateKey(d);
-          const hasEvent = events.some(e => e.date === key);
+          const hasEvent = initialEvents.some(e => e.date === key);
           return (
               <button 
                 key={d} 
@@ -76,13 +104,15 @@ export default function EventsCalendar({ events, setEvents }) {
               <input type="time" required value={form.time} onChange={e => setForm({...form, time: e.target.value})} className="flex-1 p-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-xs dark:text-white outline-none border border-transparent dark:border-slate-700/50 focus:border-slate-700 transition-all cursor-pointer" />
               <input type="text" placeholder="Room" value={form.room} onChange={e => setForm({...form, room: e.target.value})} className="flex-1 p-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-xs dark:text-white outline-none focus:ring-2 ring-orange-500/50 border border-transparent dark:border-slate-700/50 dark:focus:border-slate-700 transition-all cursor-text" />
             </div>
-            <button type="submit" className="w-full py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all active:scale-95">Add Academic Event</button>
+            <button type="submit" disabled={loading} className="w-full py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all active:scale-95 disabled:opacity-50">
+              {loading ? 'Saving...' : 'Add Academic Event'}
+            </button>
           </form>
           <div className="flex-1 overflow-y-auto space-y-2">
-             {events.filter(e => e.date === formatDateKey(selectedDay)).map(e => (
-               <div key={e.id} className="p-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 rounded-xl flex justify-between items-center">
+             {initialEvents.filter(e => e.date === formatDateKey(selectedDay)).map(e => (
+               <div key={e._id || e.id} className="p-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 rounded-xl flex justify-between items-center">
                   <div className="text-[11px] font-bold text-slate-900 dark:text-white">{e.title} <span className="block text-[9px] text-slate-400 font-medium">{e.time}</span></div>
-                  <button onClick={() => setEvents(events.filter(ev => ev.id !== e.id))} className="text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={14}/></button>
+                  <button onClick={() => handleDelete(e._id || e.id)} className="text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={14}/></button>
                </div>
              ))}
           </div>

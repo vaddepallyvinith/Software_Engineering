@@ -1,17 +1,34 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Users, Settings, LogOut, LayoutDashboard, MessageSquare, Sun, Moon, Shield, User } from 'lucide-react';
+import { Users, Settings, LogOut, LayoutDashboard, MessageSquare, Sun, Moon, Shield, User as UserIcon } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { useState, useEffect } from 'react';
+import api from '../../services/api';
 
 export default function Sidebar() {
   const location = useLocation();
   const { theme, toggleTheme, increaseTextSize, decreaseTextSize } = useTheme();
   
+  const [userData, setUserData] = useState(null);
+
+  useEffect(() => {
+    // Only attempt to fetch the profile if the token exists
+    if (localStorage.getItem('token')) {
+      api.get('/me').then(res => {
+        setUserData(res.data.user);
+      }).catch(err => console.error("Failed to load user for Sidebar", err));
+    }
+  }, []);
+
   const menuItems = [
     { name: 'Me Space', path: '/', icon: <LayoutDashboard size={20} />, activeColor: 'from-cyan-500 to-blue-500 shadow-cyan-500/30' },
     { name: 'We Space', path: '/we-space', icon: <Users size={20} />, activeColor: 'from-orange-500 to-amber-500 shadow-orange-500/30' },
     { name: 'Messages', path: '/messages', icon: <MessageSquare size={20} />, activeColor: 'from-fuchsia-500 to-pink-500 shadow-fuchsia-500/30' },
     { name: 'Settings', path: '/settings', icon: <Settings size={20} />, activeColor: 'from-slate-500 to-slate-400 shadow-slate-500/30' },
   ];
+
+  const userName = userData?.name || "Student";
+  const userInitial = userName.charAt(0).toUpperCase();
+  const universityInfo = userData?.profile?.universityName || "University";
 
   return (
     <div className="w-64 bg-slate-50 dark:bg-slate-950 border-r border-slate-200 dark:border-white/5 flex flex-col p-5 fixed left-0 top-0 h-screen transition-colors shadow-[4px_0_24px_rgba(0,0,0,0.02)] dark:shadow-none z-50">
@@ -64,16 +81,23 @@ export default function Sidebar() {
         {/* User Card */}
         <div className="p-3 bg-white dark:bg-slate-900 rounded-[1.5rem] border border-slate-200 dark:border-white/10 shadow-sm flex items-center gap-3 group hover:border-blue-500/50 transition-colors cursor-default">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black shadow-md shrink-0">
-            V
+            {userInitial}
           </div>
           <div className="flex-1 min-w-0">
-            <h4 className="text-sm font-black text-slate-900 dark:text-white truncate">Vinith K.</h4>
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate">UoH CS Dept</p>
+            <h4 className="text-sm font-black text-slate-900 dark:text-white truncate">{userName}</h4>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate">{universityInfo}</p>
           </div>
         </div>
 
         {/* Logout */}
-        <button className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-400 transition-colors">
+        <button 
+          onClick={() => {
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.href = '/login';
+          }}
+          className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-400 transition-colors"
+        >
           <LogOut size={16} /> Sign Out
         </button>
       </div>
