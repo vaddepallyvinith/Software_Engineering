@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Send, X, Smile, Paperclip } from 'lucide-react';
+import { Send, X, Paperclip } from 'lucide-react';
 
 export default function ChatPopup({ isOpen, onClose, peerName }) {
   const [message, setMessage] = useState('');
@@ -18,22 +18,24 @@ export default function ChatPopup({ isOpen, onClose, peerName }) {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 w-80 bg-white shadow-2xl rounded-2xl border border-gray-200 flex flex-col overflow-hidden z-50">
+    <div className="fixed bottom-6 right-6 w-80 bg-white dark:bg-slate-900 shadow-xl rounded-lg border border-slate-200 dark:border-slate-700 flex flex-col overflow-hidden z-50 font-sans">
       {/* Header */}
-      <div className="bg-slate-900 p-4 text-white flex justify-between items-center">
+      <div className="bg-slate-100 dark:bg-slate-800 p-3 text-slate-900 dark:text-white flex justify-between items-center border-b border-slate-200 dark:border-slate-700">
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-          <span className="font-bold text-sm">{peerName}</span>
+          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+          <span className="font-semibold text-sm">{peerName}</span>
         </div>
-        <button onClick={onClose} className="hover:text-red-400"><X size={18} /></button>
+        <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"><X size={16} /></button>
       </div>
 
       {/* Messages */}
-      <div className="h-64 overflow-y-auto p-4 space-y-3 bg-gray-50">
+      <div className="h-64 overflow-y-auto p-4 space-y-3 bg-white dark:bg-slate-950">
         {chatHistory.map(msg => (
           <div key={msg.id} className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm ${
-              msg.sender === 'me' ? 'bg-blue-600 text-white' : 'bg-white border text-gray-800'
+            <div className={`max-w-[80%] px-3 py-2 rounded-md text-sm shadow-sm ${
+              msg.sender === 'me' 
+                ? 'bg-blue-600 text-white border border-blue-700' 
+                : 'bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200'
             }`}>
               {msg.text}
             </div>
@@ -42,14 +44,14 @@ export default function ChatPopup({ isOpen, onClose, peerName }) {
       </div>
 
       {/* Input */}
-      <form onSubmit={sendMessage} className="p-3 border-t flex items-center gap-2">
-        <button type="button" className="text-gray-400 hover:text-gray-600"><Paperclip size={18} /></button>
+      <form onSubmit={sendMessage} className="p-3 border-t border-slate-200 dark:border-slate-700 flex items-center gap-2 bg-slate-50 dark:bg-slate-900">
+        <button type="button" className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"><Paperclip size={16} /></button>
         <input 
           type="text" placeholder="Type a message..." value={message}
           onChange={(e) => setMessage(e.target.value)}
-          className="flex-1 bg-gray-100 rounded-full px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+          className="flex-1 bg-white dark:bg-slate-950 rounded-md border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500 text-slate-900 dark:text-white"
         />
-        <button type="submit" className="text-blue-600 hover:text-blue-800"><Send size={18} /></button>
+        <button type="submit" className="text-blue-600 hover:text-blue-700 transition-colors"><Send size={16} /></button>
       </form>
     </div>
   );
