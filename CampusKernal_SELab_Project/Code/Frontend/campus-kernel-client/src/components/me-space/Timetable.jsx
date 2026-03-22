@@ -17,13 +17,13 @@ export default function Timetable({ academicEvents = [] }) {
   const weekDays = getWeekDates();
 
   return (
-    <div className="p-6 bg-white rounded-3xl">
+    <div className="p-6">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Weekly Overview</h2>
-          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Current Academic Week</p>
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Weekly Overview</h2>
+          <p className="text-slate-400 dark:text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">Current Academic Week</p>
         </div>
-        <div className="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-xl text-xs font-bold">
+        <div className="bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-500 border border-orange-100 dark:border-orange-500/20 px-4 py-2 rounded-xl text-xs font-bold">
           Semester 6 • UoH
         </div>
       </div>
@@ -39,22 +39,22 @@ export default function Timetable({ academicEvents = [] }) {
           return (
             <div key={day} className="flex flex-col gap-3">
               <div className="text-center">
-                <p className="text-[10px] font-black text-slate-400 uppercase mb-1">{day.slice(0, 3)}</p>
-                <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
-                  {dayEvents.length > 0 && <div className="h-full bg-indigo-500 w-full"></div>}
+                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase mb-1">{day.slice(0, 3)}</p>
+                <div className="h-1 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                  {dayEvents.length > 0 && <div className="h-full bg-orange-500 w-full"></div>}
                 </div>
               </div>
 
               <div className="space-y-3">
                 {dayEvents.length === 0 ? (
-                  <div className="h-24 border-2 border-dashed border-slate-50 rounded-2xl flex items-center justify-center">
-                    <span className="text-[10px] text-slate-300 italic font-bold">Free</span>
+                  <div className="h-24 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-center">
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 italic font-bold">Free</span>
                   </div>
                 ) : (
                   dayEvents.map(event => (
-                    <div key={event.id} className="bg-slate-50 p-3 rounded-2xl border border-slate-100 hover:border-indigo-200 transition-all group">
-                      <p className="text-[10px] font-black text-indigo-600 mb-1">{event.time}</p>
-                      <p className="text-[11px] font-bold text-slate-800 leading-tight mb-2 group-hover:text-indigo-600">
+                    <div key={event.id} className="bg-slate-50/50 dark:bg-slate-800/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-700/50 hover:border-orange-300 dark:hover:border-orange-500 transition-all group">
+                      <p className="text-[10px] font-black text-orange-500 dark:text-orange-400 mb-1">{event.time}</p>
+                      <p className="text-[11px] font-bold text-slate-800 dark:text-slate-200 leading-tight mb-2 group-hover:text-orange-600 dark:group-hover:text-orange-400">
                         {event.title}
                       </p>
                       {event.room && (
