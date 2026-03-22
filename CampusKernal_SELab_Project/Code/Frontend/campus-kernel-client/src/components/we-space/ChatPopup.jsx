@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { Send, X, Smile, Paperclip } from 'lucide-react';
 
 export default function ChatPopup({ isOpen, onClose, peerName }) {
-  if (!isOpen) return null;
-
   const [message, setMessage] = useState('');
   const [chatHistory, setChatHistory] = useState([
     { id: 1, text: "Hey Vinith, want to study for the SE Lab?", sender: "peer" },
     { id: 2, text: "Sure! I just finished the Task Tracker module.", sender: "me" }
   ]);
+
+  if (!isOpen) return null;
 
   const sendMessage = (e) => {
     e.preventDefault();
