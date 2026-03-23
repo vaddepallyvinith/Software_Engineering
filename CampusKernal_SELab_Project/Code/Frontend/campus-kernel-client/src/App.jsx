@@ -23,8 +23,7 @@ function AppLayout() {
   return (
     <div className="flex bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 transition-colors duration-500 min-h-screen font-sans text-[15px] sm:text-base font-medium">
       {!isAuthPage && <Sidebar />}
-
-      <main className={`flex-1 ${!isAuthPage ? 'ml-[250px] p-8' : ''}`}>
+      <main className={`flex-1 min-w-0 overflow-x-hidden ${!isAuthPage ? 'ml-64 p-4 md:p-8' : ''}`}>
         <Routes>
           <Route path="/" element={<ProtectedRoute><MeSpace /></ProtectedRoute>} />
           <Route path="/we-space" element={<ProtectedRoute><WeSpace /></ProtectedRoute>} />
