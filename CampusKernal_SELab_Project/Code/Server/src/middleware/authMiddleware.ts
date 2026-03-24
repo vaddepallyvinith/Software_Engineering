@@ -32,7 +32,7 @@ export const protectRoute = (
   next: NextFunction
 ): void => {
   // ── Step 1: Get the Authorization header ─────────────────────────────────
-  // req.headers.authorization looks like:  "Bearer eyJhbGciOiJIUzI1NiJ9..."
+
   const authHeader = req.headers.authorization;
 
   // ── Step 2: Check header exists and starts with 'Bearer ' ────────────────
@@ -40,7 +40,7 @@ export const protectRoute = (
     res.status(401).json({
       message: 'Access denied. No token provided. Please log in.',
     });
-    return; // stop here — don't call next()
+    return; 
   }
 
   // ── Step 3: Extract the token string ─────────────────────────────────────
@@ -61,7 +61,7 @@ export const protectRoute = (
     // to know WHO is making the request — without hitting the DB again.
     req.user = { id: decoded.id };
 
-    next(); // ✅ token is valid — proceed to the actual route handler
+    next(); //  token is valid — proceed to the actual route handler
   } catch (error) {
     // Token is expired, tampered with, or just garbage
     res.status(401).json({
