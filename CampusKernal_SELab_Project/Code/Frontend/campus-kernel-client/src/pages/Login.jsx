@@ -40,12 +40,12 @@ export default function Login() {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
+
     ctx.fillStyle = '#f8fafc';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
+
     for (let i = 0; i < 6; i++) {
       ctx.strokeStyle = `rgba(${Math.random() * 200},${Math.random() * 200},${Math.random() * 200},0.5)`;
       ctx.beginPath();
@@ -53,10 +53,10 @@ export default function Login() {
       ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height);
       ctx.stroke();
     }
-    
+
     ctx.font = 'bold 32px Arial';
     ctx.textBaseline = 'middle';
-    
+
     for (let i = 0; i < text.length; i++) {
       ctx.save();
       ctx.fillStyle = `rgb(${Math.random() * 150},${Math.random() * 150},${Math.random() * 150})`;
@@ -79,10 +79,10 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    
+
     if (userInput.toLowerCase() !== captchaText.toLowerCase()) {
       setError('Incorrect CAPTCHA entered. Please try again.');
-      generateCaptcha(); 
+      generateCaptcha();
       return;
     }
 
@@ -102,7 +102,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 py-12 px-4 font-sans">
       <div className="max-w-md w-full bg-white p-8 rounded-xl shadow-2xl border border-slate-200">
-        
+
         {/* Logo Section */}
         <div className="flex justify-center mb-6">
           <div className="flex items-center gap-3">
@@ -128,31 +128,31 @@ export default function Login() {
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-1.5">Email Address</label>
-            <input 
-              type="email" 
-              placeholder="Enter your student email" 
-              value={formData.email} 
-              onChange={e => setFormData({...formData, email: e.target.value})} 
-              className="p-2.5 border border-slate-300 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none block text-slate-900 bg-white placeholder-slate-400 font-medium text-sm transition-shadow" 
-              required 
+            <input
+              type="email"
+              placeholder="Enter your student email"
+              value={formData.email}
+              onChange={e => setFormData({ ...formData, email: e.target.value })}
+              className="p-2.5 border border-slate-300 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none block text-slate-900 bg-white placeholder-slate-400 font-medium text-sm transition-shadow"
+              required
             />
           </div>
-          
+
           <div>
-             <div className="flex justify-between items-center mb-1.5">
-               <label className="block text-sm font-bold text-slate-700">Password</label>
-               <a href="#" onClick={(e) => {
-                 e.preventDefault();
-                 alert('Forgot password functionality will be implemented in a future update. For now, please re-register if you lost your account.');
-               }} className="text-xs text-blue-600 hover:text-blue-800 font-bold transition-colors">Forgot Password?</a>
-             </div>
-            <input 
-              type="password" 
-              placeholder="Enter your password" 
-              value={formData.password} 
-              onChange={e => setFormData({...formData, password: e.target.value})} 
-              className="p-2.5 border border-slate-300 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none block text-slate-900 bg-white placeholder-slate-400 font-medium text-sm transition-shadow" 
-              required 
+            <div className="flex justify-between items-center mb-1.5">
+              <label className="block text-sm font-bold text-slate-700">Password</label>
+              <a href="#" onClick={(e) => {
+                e.preventDefault();
+                alert('Forgot password functionality will be implemented in a future update. For now, please re-register if you lost your account.');
+              }} className="text-xs text-blue-600 hover:text-blue-800 font-bold transition-colors">Forgot Password?</a>
+            </div>
+            <input
+              type="password"
+              placeholder="Enter your password"
+              value={formData.password}
+              onChange={e => setFormData({ ...formData, password: e.target.value })}
+              className="p-2.5 border border-slate-300 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none block text-slate-900 bg-white placeholder-slate-400 font-medium text-sm transition-shadow"
+              required
             />
           </div>
 
@@ -160,28 +160,28 @@ export default function Login() {
             <label className="block text-sm font-bold text-slate-700 mb-1.5">Security Verification</label>
             <div className="flex gap-2 items-center mb-2 p-2 border border-slate-200 rounded-md bg-slate-50 shadow-inner">
               <canvas ref={canvasRef} width="180" height="50" className="bg-white rounded border border-slate-300 shadow-sm" />
-              <button 
-                type="button" 
-                onClick={generateCaptcha} 
+              <button
+                type="button"
+                onClick={generateCaptcha}
                 className="p-2.5 text-slate-500 hover:text-blue-600 hover:bg-blue-100 rounded-md transition-colors ml-auto flex items-center justify-center shrink-0 border border-transparent hover:border-blue-200"
                 title="Refresh Captcha Image"
               >
                 <RefreshCw size={18} />
               </button>
             </div>
-            <input 
-              type="text" 
-              placeholder="Enter the 6 characters from image..." 
-              value={userInput} 
-              onChange={e => setUserInput(e.target.value)} 
-              className="p-2.5 border border-slate-300 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none block text-slate-900 bg-white placeholder-slate-400 font-bold text-sm uppercase transition-shadow tracking-widest" 
-              required 
+            <input
+              type="text"
+              placeholder="Enter the characters from the image"
+              value={userInput}
+              onChange={e => setUserInput(e.target.value)}
+              className="p-2.5 border border-slate-300 rounded-md w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none block text-slate-900 bg-white placeholder-slate-400 font-bold text-sm transition-shadow tracking-widest"
+              required
               maxLength={6}
             />
           </div>
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={loading}
             className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold py-3 rounded-md flex items-center justify-center gap-2 mt-2 shadow-sm transition-all focus:ring-4 focus:ring-blue-500/20"
           >
