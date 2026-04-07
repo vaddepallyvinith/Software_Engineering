@@ -69,7 +69,7 @@ export default function MeSpace() {
 
       {/* 2. STATS OVERVIEW */}
       <div className="mb-6">
-        <StatsOverview taskCount={tasks.length} overdueCount={overdueCount} cgpa={cgpa} />
+        <StatsOverview taskCount={tasks.length} overdueCount={overdueCount} cgpa={cgpa} completedCount={tasks.filter(t => t.status === 'Completed').length} />
       </div>
 
       {/* 3. TAB NAVIGATION */}

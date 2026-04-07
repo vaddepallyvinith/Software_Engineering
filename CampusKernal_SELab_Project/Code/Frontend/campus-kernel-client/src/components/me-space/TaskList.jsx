@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Calendar, CheckCircle2, Clock, AlertCircle, PlusCircle, Trash2 } from 'lucide-react';
+import { Calendar, CheckCircle2, Clock, AlertCircle, PlusCircle, Trash2, Pencil } from 'lucide-react';
 import api from '../../services/api';
 
 export default function TaskList({ initialTasks = [], onUpdate }) {
@@ -8,31 +8,57 @@ export default function TaskList({ initialTasks = [], onUpdate }) {
   const [deadline, setDeadline] = useState('');
   const [priority, setPriority] = useState('Medium');
   const [loading, setLoading] = useState(false);
+  const [editingTaskId, setEditingTaskId] = useState(null);
 
   const handleAddTask = async (e) => {
     e.preventDefault();
     setLoading(true);
     
-    const newTask = {
-      title,
-      subject,
-      deadline,
-      priority,
-      status: 'Not Started'
-    };
-
     try {
-      const updatedTasks = [newTask, ...initialTasks];
+      let updatedTasks;
+      if (editingTaskId) {
+        updatedTasks = initialTasks.map(t => {
+          if ((t._id || t.id) === editingTaskId) {
+            return { ...t, title, subject, deadline, priority };
+          }
+          return t;
+        });
+      } else {
+        const newTask = {
+          title,
+          subject,
+          deadline,
+          priority,
+          status: 'Not Started'
+        };
+        updatedTasks = [newTask, ...initialTasks];
+      }
+
       await api.put('/me/update', { tasks: updatedTasks });
       
       setTitle(''); setSubject(''); setDeadline(''); setPriority('Medium');
+      setEditingTaskId(null);
       if (onUpdate) onUpdate();
     } catch (error) {
-      console.error('Failed to add task', error);
+      console.error('Failed to save task', error);
       alert('Failed to save task to database');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEditTask = (task) => {
+    setTitle(task.title);
+    setSubject(task.subject);
+    setDeadline(task.deadline);
+    setPriority(task.priority);
+    setEditingTaskId(task._id || task.id);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCancelEdit = () => {
+    setTitle(''); setSubject(''); setDeadline(''); setPriority('Medium');
+    setEditingTaskId(null);
   };
 
   const handleDeleteTask = async (taskId) => {
@@ -42,6 +68,23 @@ export default function TaskList({ initialTasks = [], onUpdate }) {
       if (onUpdate) onUpdate();
     } catch (error) {
       console.error('Failed to delete task', error);
+    }
+  };
+
+  const handleToggleComplete = async (task) => {
+    const taskId = task._id || task.id;
+    const updatedTasks = initialTasks.map(t => {
+      if ((t._id || t.id) === taskId) {
+        return { ...t, status: t.status === 'Completed' ? 'Not Started' : 'Completed' };
+      }
+      return t;
+    });
+    
+    try {
+      await api.put('/me/update', { tasks: updatedTasks });
+      if (onUpdate) onUpdate();
+    } catch (err) {
+      console.error('Failed to update task status', err);
     }
   };
 
@@ -66,9 +109,16 @@ export default function TaskList({ initialTasks = [], onUpdate }) {
             <option value="Low">Low Priority</option>
           </select>
         </div>
-        <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2">
-          <PlusCircle size={18} /> {loading ? 'Saving...' : 'Add Task'}
-        </button>
+        <div className="flex gap-2">
+          <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2">
+            <PlusCircle size={18} /> {loading ? 'Saving...' : (editingTaskId ? 'Update Task' : 'Add Task')}
+          </button>
+          {editingTaskId && (
+            <button type="button" onClick={handleCancelEdit} className="w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-semibold py-2 px-4 rounded-md transition-colors flex items-center justify-center">
+              Cancel
+            </button>
+          )}
+        </div>
       </form>
 
       {/* TASK LIST */}
@@ -96,9 +146,17 @@ export default function TaskList({ initialTasks = [], onUpdate }) {
                   {overdue && <span className="flex items-center gap-1 text-red-600 font-bold"><AlertCircle size={14} /> Overdue</span>}
                 </div>
               </div>
-              <button onClick={() => handleDeleteTask(taskId)} className="self-end md:self-auto p-2 text-slate-400 hover:text-red-600 transition-colors border border-transparent hover:border-red-200 hover:bg-red-50 rounded-md">
-                <Trash2 size={18} />
-              </button>
+              <div className="flex gap-1 self-end md:self-auto">
+                <button onClick={() => handleToggleComplete(task)} className={`p-2 transition-colors border border-transparent rounded-md ${task.status === 'Completed' ? 'text-green-600 hover:text-green-700 hover:bg-green-50' : 'text-slate-400 hover:text-green-600 hover:border-green-200 hover:bg-green-50'}`} title={task.status === 'Completed' ? "Mark as Not Started" : "Mark as Completed"}>
+                  <CheckCircle2 size={18} />
+                </button>
+                <button onClick={() => handleEditTask(task)} className="p-2 text-slate-400 hover:text-blue-600 transition-colors border border-transparent hover:border-blue-200 hover:bg-blue-50 rounded-md" title="Edit">
+                  <Pencil size={18} />
+                </button>
+                <button onClick={() => handleDeleteTask(taskId)} className="p-2 text-slate-400 hover:text-red-600 transition-colors border border-transparent hover:border-red-200 hover:bg-red-50 rounded-md" title="Delete">
+                  <Trash2 size={18} />
+                </button>
+              </div>
             </div>
           );
         })}

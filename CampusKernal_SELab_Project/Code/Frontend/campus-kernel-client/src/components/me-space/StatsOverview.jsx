@@ -1,11 +1,11 @@
 import { CheckCircle, AlertCircle, Clock, GraduationCap } from 'lucide-react';
 
-export default function StatsOverview({ taskCount, overdueCount, cgpa }) {
+export default function StatsOverview({ taskCount, overdueCount, cgpa, completedCount = 0 }) {
   const stats = [
     { label: 'Total Tasks', value: taskCount, icon: <Clock className="text-blue-600" size={20} /> },
     { label: 'Overdue', value: overdueCount, icon: <AlertCircle className="text-red-600" size={20} /> },
     { label: 'Current CGPA', value: cgpa, icon: <GraduationCap className="text-purple-600" size={20} /> },
-    { label: 'Completed', value: '12', icon: <CheckCircle className="text-green-600" size={20} /> },
+    { label: 'Completed', value: completedCount, icon: <CheckCircle className="text-green-600" size={20} /> },
   ];
 
   return (
