@@ -44,6 +44,8 @@ export const register = async (req: Request, res: Response) => {
       currentYear,
       yearOfGraduation,
       enrollmentNo,   // optional
+      skills,
+      location,
     } = req.body;
 
     // ── Step 1: Check if email is already taken ──────────────────────────
@@ -77,6 +79,8 @@ export const register = async (req: Request, res: Response) => {
         currentYear,
         yearOfGraduation,
         enrollmentNo,    // undefined is fine — schema marks it optional
+        skills: skills || [],
+        location: location || '',
       },
     });
     await newUser.save();

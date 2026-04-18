@@ -23,6 +23,8 @@ export interface IUser extends Document {
     yearOfGraduation: number;// e.g. 2027  (the calendar year they graduate)
     enrollmentNo?: string;   // Optional — some universities don't use enrolment numbers
     avatar?: string;         // URL to profile picture (set later via upload)
+    skills?: string[];       // Array of skills/interests (e.g. ['React', 'Python'])
+    location?: string;       // On-campus location mapping (e.g. 'Hostel K')
   };
 
   // Me Space Dynamic Entities
@@ -131,6 +133,15 @@ const UserSchema: Schema<IUser> = new Schema(
       avatar: {
         type: String,        // Will store a URL (e.g. from Cloudinary) set after registration
       },
+      skills: [{
+        type: String,
+        trim: true
+      }],
+      location: {
+        type: String,
+        trim: true,
+        default: ''
+      }
     },
 
     // ── Me Space Dynamic Data (Tasks, Events, Performance) ───────────────

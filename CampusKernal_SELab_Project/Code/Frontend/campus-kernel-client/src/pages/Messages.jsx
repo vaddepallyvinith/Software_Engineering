@@ -1,38 +1,150 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Send, Search, MoreVertical, CheckCheck, Smile, Paperclip, PlusCircle, MessageSquare } from 'lucide-react';
+import io from 'socket.io-client';
+import api from '../services/api';
 
 export default function Messages() {
-  const [activeChat, setActiveChat] = useState(1);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [activeChat, setActiveChat] = useState(null);
   const [newMessage, setNewMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [contacts, setContacts] = useState([]);
+  const [messages, setMessages] = useState([]);
+  
+  const socketRef = useRef(null);
+  const activeChatRef = useRef(null);
+  const messagesEndRef = useRef(null);
 
-  const [contacts] = useState([
-    { id: 1, name: 'Bhavani Shankar', lastMsg: 'The SE Lab report is ready!', time: '10:45 AM', online: true, unread: 2 },
-    { id: 2, name: 'Ananya Rao', lastMsg: 'Did you check the ML notes?', time: 'Yesterday', online: true, unread: 0 },
-    { id: 3, name: 'Rahul K.', lastMsg: 'See you at the study room.', time: 'Monday', online: false, unread: 0 },
-    { id: 4, name: 'Snehita P.', lastMsg: 'Can we use Tailwind for the project?', time: 'Friday', online: false, unread: 0 },
-  ]);
+  useEffect(() => {
+    activeChatRef.current = activeChat;
+  }, [activeChat]);
 
-  const [messages, setMessages] = useState([
-    { id: 1, text: "Hey! Are we meeting today?", time: "10:30 AM", sender: "them" },
-    { id: 2, text: "Yes, after the 2 PM lecture.", time: "10:32 AM", sender: "me" },
-    { id: 3, text: "The SE Lab report is ready!", time: "10:45 AM", sender: "them" },
-  ]);
+  // Connect socket and fetch initial data
+  useEffect(() => {
+    socketRef.current = io('http://localhost:5001');
+
+    const initialize = async () => {
+      try {
+        const userRes = await api.get('/me');
+        const myId = userRes.data.user._id;
+        setCurrentUser(userRes.data.user);
+        
+        socketRef.current.emit('join', myId);
+
+        const contactRes = await api.get('/messages/contacts');
+        setContacts(contactRes.data);
+      } catch (err) {
+        console.error("Initialization error:", err);
+      }
+    };
+    initialize();
+
+    const handleMessage = (newMsg) => {
+      const peerId = activeChatRef.current;
+      
+      const sId = newMsg.sender?._id || newMsg.sender?.toString() || newMsg.sender;
+      const rId = newMsg.receiver?._id || newMsg.receiver?.toString() || newMsg.receiver;
+      
+      if (sId === peerId || rId === peerId) {
+        setMessages(prev => {
+           // Prevent duplicates if we already added it optimistically
+           if (prev.some(m => m._id === newMsg._id || m.text === newMsg.text)) return prev;
+           return [...prev, newMsg];
+        });
+        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+        
+        // If we are actively reading a message sent by them, mark as read
+        if (sId === peerId) {
+            socketRef.current?.emit('mark_read', { sender: sId, receiver: rId });
+        }
+      }
+      
+      setContacts(prev => prev.map(c => {
+        if (c.id === sId || c.id === rId) {
+          const isUnread = (newMsg.sender === c.id && c.id !== peerId) ? 1 : 0;
+          return { ...c, lastMsg: newMsg.text, time: newMsg.createdAt, unread: (c.unread || 0) + isUnread };
+        }
+        return c;
+      }));
+    };
+
+    socketRef.current.on('receive_message', handleMessage);
+    
+    socketRef.current.on('messages_read', (readerId) => {
+      if (activeChatRef.current === readerId) {
+         setMessages(prev => prev.map(m => m.receiver === readerId ? { ...m, read: true } : m));
+      }
+    });
+
+    return () => {
+      socketRef.current.disconnect();
+    };
+  }, []);
+
+  // Fetch history when clicking a contact
+  useEffect(() => {
+    if (!activeChat) return;
+    const fetchHistory = async () => {
+      try {
+        const res = await api.get(`/messages/${activeChat}`);
+        setMessages(res.data);
+        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      } catch(err) {
+        console.error("History fetch error:", err);
+      }
+    };
+    fetchHistory();
+    
+    if (currentUser) {
+       socketRef.current?.emit('mark_read', { sender: activeChat, receiver: currentUser._id });
+       setMessages(prev => prev.map(m => m.sender === activeChat ? { ...m, read: true } : m));
+       setContacts(prev => prev.map(c => c.id === activeChat ? { ...c, unread: 0 } : c));
+    }
+  }, [activeChat, currentUser]);
 
   const handleSend = (e) => {
     e.preventDefault();
-    if (!newMessage.trim()) return;
-    setMessages([...messages, { 
-      id: Date.now(), 
-      text: newMessage, 
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), 
-      sender: "me" 
-    }]);
+    if (!newMessage.trim() || !activeChat || !currentUser) return;
+
+    const payload = {
+      _id: Date.now().toString(), // temporary ID
+      sender: currentUser._id,
+      receiver: activeChat,
+      text: newMessage,
+      createdAt: new Date().toISOString()
+    };
+
+    // Optimistic UI update
+    setMessages(prev => [...prev, payload]);
+    setContacts(prev => prev.map(c => {
+      if (c.id === activeChat) {
+        return { ...c, lastMsg: newMessage, time: payload.createdAt };
+      }
+      return c;
+    }));
+    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+
+    // Emit to backend socket
+    socketRef.current.emit('send_message', payload);
     setNewMessage('');
   };
 
-  const filteredContacts = contacts.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredContacts = contacts.filter(c => {
+    const matchName = c.name?.toLowerCase().includes(searchQuery.toLowerCase());
+    if (searchQuery.trim().length > 0) {
+      return matchName;
+    }
+    return c.lastMsg !== 'No messages yet';
+  });
+  
   const activeContact = contacts.find(c => c.id === activeChat);
+
+  // Helper to format time
+  const formatTime = (isoString) => {
+    if (!isoString) return '';
+    const d = new Date(isoString);
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
 
   return (
     <div className="max-w-7xl mx-auto pb-12 pr-4 font-sans text-slate-800 dark:text-slate-200">
@@ -49,13 +161,6 @@ export default function Messages() {
             <p className="text-slate-600 dark:text-slate-400">
               Message your peers, coordinate study sessions, and stay in touch instantly.
             </p>
-          </div>
-          
-          <div className="flex flex-col items-center justify-center p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm">
-             <div className="text-4xl font-black text-blue-600 dark:text-blue-400 mb-1">{messages.filter(m=>m.sender==='them').length}</div>
-             <div className="text-sm font-semibold text-slate-500 flex items-center gap-1.5">
-               <MessageSquare size={16} /> New Messages
-             </div>
           </div>
         </div>
       </div>
@@ -80,48 +185,49 @@ export default function Messages() {
           </div>
 
           <div className="flex-1 overflow-y-auto p-2">
-            {filteredContacts.length > 0 ? filteredContacts.map(contact => (
-              <button 
-                key={contact.id}
-                onClick={() => setActiveChat(contact.id)}
-                className={`w-full p-3 rounded-md flex items-center gap-3 transition-colors mb-1 border outline-none ${
-                  activeChat === contact.id 
-                    ? 'bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800' 
-                    : 'bg-transparent border-transparent hover:bg-slate-50 dark:hover:bg-slate-800'
-                }`}
-              >
-                <div className="relative shrink-0">
-                  <div className="w-10 h-10 rounded-md flex items-center justify-center text-white font-bold bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
-                    {contact.name[0]}
+            {filteredContacts.length > 0 ? (
+              filteredContacts.map(contact => (
+                <button 
+                  key={contact.id}
+                  onClick={() => setActiveChat(contact.id)}
+                  className={`w-full p-3 rounded-md flex items-center gap-3 transition-colors mb-1 border outline-none ${
+                    activeChat === contact.id 
+                      ? 'bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800' 
+                      : 'bg-transparent border-transparent hover:bg-slate-50 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  <div className="relative shrink-0">
+                    <div className="w-10 h-10 rounded-md flex items-center justify-center text-white font-bold bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                      {contact.name ? contact.name[0] : '?'}
+                    </div>
                   </div>
-                  {contact.online && (
-                    <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full"></div>
-                  )}
-                </div>
-                
-                <div className="flex-1 text-left overflow-hidden">
-                  <div className="flex justify-between items-center mb-0.5">
-                    <span className={`font-semibold text-sm truncate ${activeChat === contact.id ? 'text-blue-700 dark:text-blue-400' : 'text-slate-900 dark:text-white'}`}>
-                      {contact.name}
-                    </span>
-                    <span className="text-xs text-slate-400">
-                      {contact.time}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <p className={`text-xs truncate ${activeChat === contact.id ? 'text-slate-700 dark:text-slate-300' : 'text-slate-500'} font-medium`}>
-                      {contact.lastMsg}
-                    </p>
-                    {contact.unread > 0 && (
-                      <span className="bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0">
-                        {contact.unread}
+                  
+                  <div className="flex-1 text-left overflow-hidden w-full">
+                    <div className="flex justify-between items-start mb-0.5">
+                      <span className={`font-semibold text-sm truncate ${activeChat === contact.id ? 'text-blue-700 dark:text-blue-400' : 'text-slate-900 dark:text-white'}`}>
+                        {contact.name || 'Unknown User'}
                       </span>
-                    )}
+                      <div className="flex flex-col items-end shrink-0 pl-2">
+                        <span className={`text-[10px] sm:text-xs font-semibold mb-1 ${contact.unread > 0 ? 'text-green-500' : 'text-slate-400'}`}>
+                          {formatTime(contact.time)}
+                        </span>
+                        {contact.unread > 0 && (
+                          <span className="bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center justify-center min-w-[18px]">
+                            {contact.unread}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center -mt-2">
+                      <p className={`text-xs truncate pr-4 ${activeChat === contact.id ? 'text-slate-700 dark:text-slate-300' : 'text-slate-500'} ${contact.unread > 0 ? 'font-bold text-slate-800 dark:text-slate-200' : 'font-medium'}`}>
+                        {contact.lastMsg}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </button>
-            )) : (
-              <div className="text-center text-slate-500 mt-6 text-sm">No chats found.</div>
+                </button>
+              ))
+             ) : (
+                <div className="text-center text-slate-500 mt-6 text-sm">No chats found.</div>
             )}
           </div>
         </div>
@@ -129,101 +235,87 @@ export default function Messages() {
         {/* RIGHT PANE: Active Chat Thread */}
         <div className="flex-1 flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm overflow-hidden">
           
-          {/* Chat Header */}
-          <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-md bg-slate-300 dark:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300 font-bold">
-                {activeContact?.name[0]}
-              </div>
-              <div>
-                <h2 className="text-base font-bold text-slate-900 dark:text-white">{activeContact?.name}</h2>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  {activeContact?.online ? (
-                    <span className="text-xs font-semibold text-green-600 dark:text-green-500 flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span> Online
-                    </span>
-                  ) : (
-                    <span className="text-xs font-semibold text-slate-500">Offline</span>
-                  )}
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <button className="w-8 h-8 rounded flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                <Search size={16} />
-              </button>
-              <button className="w-8 h-8 rounded flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                <MoreVertical size={16} />
-              </button>
-            </div>
-          </div>
-
-          {/* Chat Messages */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50 dark:bg-slate-950">
-            <div className="text-center my-4">
-              <span className="text-xs font-semibold text-slate-500 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1 rounded">
-                Today
-              </span>
-            </div>
-
-            {messages.map((msg) => {
-              const isMe = msg.sender === 'me';
-              return (
-                <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[80%]`}>
-                    <div className={`px-4 py-2.5 shadow-sm ${
-                      isMe 
-                        ? 'bg-blue-600 text-white rounded-lg rounded-tr-none border border-blue-700' 
-                        : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-lg rounded-tl-none border border-slate-200 dark:border-slate-700'
-                    }`}>
-                      <p className="text-sm">{msg.text}</p>
-                    </div>
-                    
-                    <div className="flex items-center gap-1 mt-1 px-1 text-[10px] text-slate-500 font-semibold">
-                      {msg.time}
-                      {isMe && <CheckCheck size={12} className="text-blue-500" />}
-                    </div>
+          {activeChat ? (
+            <>
+              {/* Chat Header */}
+              <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-md bg-slate-300 dark:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300 font-bold">
+                    {activeContact?.name ? activeContact.name[0] : '?'}
+                  </div>
+                  <div>
+                    <h2 className="text-base font-bold text-slate-900 dark:text-white">{activeContact?.name || 'User'}</h2>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-
-          {/* Input Area */}
-          <div className="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
-            <form onSubmit={handleSend} className="flex items-center gap-2">
-              
-              <button type="button" className="p-2 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors bg-slate-100 dark:bg-slate-800 rounded">
-                <PlusCircle size={18} />
-              </button>
-
-              <div className="flex-1 flex items-center bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md px-3">
-                <input 
-                  type="text" 
-                  placeholder="Type a message..." 
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  className="w-full bg-transparent text-slate-900 dark:text-white text-sm outline-none py-2"
-                />
-                <button type="button" className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-                  <Smile size={16} />
-                </button>
-                <button type="button" className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-                  <Paperclip size={16} />
-               </button>
               </div>
 
-              <button 
-                type="submit" 
-                disabled={!newMessage.trim()}
-                className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white p-2.5 rounded-md transition-colors"
-              >
-                <Send size={16} />
-              </button>
-            </form>
-          </div>
+              {/* Chat Messages */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50 dark:bg-slate-950">
+                {messages.length === 0 && (
+                   <div className="text-center text-slate-400 mt-10">Start the conversation!</div>
+                )}
+                {messages.map((msg, idx) => {
+                  const isMe = msg.sender === currentUser?._id;
+                  return (
+                    <div key={msg._id || idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[80%]`}>
+                        <div className={`px-4 py-2.5 shadow-sm ${
+                          isMe 
+                            ? 'bg-blue-600 text-white rounded-lg rounded-tr-none border border-blue-700' 
+                            : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-lg rounded-tl-none border border-slate-200 dark:border-slate-700'
+                        }`}>
+                          <p className="text-sm">{msg.text}</p>
+                        </div>
+                        
+                        <div className="flex items-center gap-1 mt-1 px-1 text-[10px] text-slate-500 font-semibold">
+                          {formatTime(msg.createdAt)}
+                          {isMe && <CheckCheck size={12} className={msg.read ? "text-blue-500" : "text-slate-400"} />}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                <div ref={messagesEndRef} />
+              </div>
 
+              {/* Input Area */}
+              <div className="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
+                <form onSubmit={handleSend} className="flex items-center gap-2">
+                  <button type="button" className="p-2 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors bg-slate-100 dark:bg-slate-800 rounded">
+                    <PlusCircle size={18} />
+                  </button>
+
+                  <div className="flex-1 flex items-center bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md px-3">
+                    <input 
+                      type="text" 
+                      placeholder="Type a message..." 
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      className="w-full bg-transparent text-slate-900 dark:text-white text-sm outline-none py-2"
+                    />
+                    <button type="button" className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                      <Smile size={16} />
+                    </button>
+                    <button type="button" className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                      <Paperclip size={16} />
+                   </button>
+                  </div>
+
+                  <button 
+                    type="submit" 
+                    disabled={!newMessage.trim()}
+                    className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white p-2.5 rounded-md transition-colors"
+                  >
+                    <Send size={16} />
+                  </button>
+                </form>
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center text-slate-400 bg-slate-50 dark:bg-slate-950">
+               Select a conversation to start chatting!
+            </div>
+          )}
         </div>
       </div>
     </div>

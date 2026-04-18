@@ -9,6 +9,7 @@ export default function Sidebar() {
   const { theme, toggleTheme, increaseTextSize, decreaseTextSize } = useTheme();
   
   const [userData, setUserData] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     // Only attempt to fetch the profile if the token exists
@@ -16,6 +17,16 @@ export default function Sidebar() {
       api.get('/me').then(res => {
         setUserData(res.data.user);
       }).catch(err => console.error("Failed to load user for Sidebar", err));
+
+      api.get('/messages/unread').then(res => {
+        setUnreadCount(res.data.unread);
+      }).catch(err => console.error("Failed to load unread count", err));
+
+      const interval = setInterval(() => {
+        api.get('/messages/unread').then(res => setUnreadCount(res.data.unread)).catch(() => {});
+      }, 15000);
+
+      return () => clearInterval(interval);
     }
   }, []);
 
@@ -60,7 +71,14 @@ export default function Sidebar() {
               }`}
             >
               {item.icon}
-              {item.name}
+              {item.name === 'Messages' && unreadCount > 0 ? (
+                <div className="flex-1 flex justify-between items-center">
+                  <span>{item.name}</span>
+                  <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{unreadCount}</span>
+                </div>
+              ) : (
+                <span>{item.name}</span>
+              )}
             </Link>
           );
         })}

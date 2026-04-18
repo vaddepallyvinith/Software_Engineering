@@ -40,6 +40,8 @@ router.put('/update', protectRoute, async (req: AuthRequest, res: Response) => {
     if (req.body.events !== undefined) user.events = req.body.events;
     if (req.body.records !== undefined) user.records = req.body.records;
     if (req.body.cgpa !== undefined) user.cgpa = req.body.cgpa;
+    if (req.body.skills !== undefined) user.profile.skills = req.body.skills;
+    if (req.body.location !== undefined) user.profile.location = req.body.location;
 
     await user.save();
     
