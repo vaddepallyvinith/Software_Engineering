@@ -10,6 +10,7 @@ export default function Messages() {
   const [searchQuery, setSearchQuery] = useState('');
   const [contacts, setContacts] = useState([]);
   const [messages, setMessages] = useState([]);
+  const [suggestedMatches, setSuggestedMatches] = useState([]);
   
   const socketRef = useRef(null);
   const activeChatRef = useRef(null);
@@ -33,6 +34,10 @@ export default function Messages() {
 
         const contactRes = await api.get('/messages/contacts');
         setContacts(contactRes.data);
+
+        // Fetch suggested synergy matches for the new UI component
+        const matchRes = await api.get('/synergy/matches');
+        setSuggestedMatches(matchRes.data);
       } catch (err) {
         console.error("Initialization error:", err);
       }
@@ -61,7 +66,7 @@ export default function Messages() {
       
       setContacts(prev => prev.map(c => {
         if (c.id === sId || c.id === rId) {
-          const isUnread = (newMsg.sender === c.id && c.id !== peerId) ? 1 : 0;
+          const isUnread = (sId === c.id && c.id !== peerId) ? 1 : 0;
           return { ...c, lastMsg: newMsg.text, time: newMsg.createdAt, unread: (c.unread || 0) + isUnread };
         }
         return c;
@@ -137,6 +142,19 @@ export default function Messages() {
     return c.lastMsg !== 'No messages yet';
   });
   
+  const handleConnect = async (peerId) => {
+    try {
+      await api.post(`/synergy/connect/${peerId}`);
+      // Optimistically update the suggested peer's connectionStatus
+      setSuggestedMatches(prev => prev.map(p => 
+        p.id === peerId ? { ...p, connectionStatus: 'sent' } : p
+      ));
+    } catch(e) {
+      console.error(e);
+      alert("Failed to send request.");
+    }
+  };
+  
   const activeContact = contacts.find(c => c.id === activeChat);
 
   // Helper to format time
@@ -183,6 +201,36 @@ export default function Messages() {
               />
             </div>
           </div>
+
+          {/* Suggested Connections Section */}
+          {suggestedMatches.length > 0 && !searchQuery.trim() && (
+            <div className="border-b border-slate-200 dark:border-slate-800 p-4 bg-slate-50 dark:bg-slate-900/50">
+              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Suggested Connections</h3>
+              <div className="flex overflow-x-auto gap-3 pb-2 snap-x scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700">
+                {suggestedMatches.map(peer => (
+                   <div key={peer.id} className="min-w-[130px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 shrink-0 snap-start shadow-sm flex flex-col items-center text-center group transition-all hover:border-slate-300 dark:hover:border-slate-600">
+                      <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-bold text-sm text-slate-700 dark:text-slate-300 mb-2 relative border border-white dark:border-slate-600 shadow-inner">
+                        {peer.name?.[0] || '?'}
+                        {peer.status === 'Online' && <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border border-white dark:border-slate-800 rounded-full"></div>}
+                      </div>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate w-full">{peer.name}</h4>
+                      <p className="text-[10px] text-slate-500 mb-3">{peer.match}% Match</p>
+                      <button 
+                        onClick={() => handleConnect(peer.id)}
+                        disabled={peer.connectionStatus === 'sent'}
+                        className={`w-full py-1.5 rounded text-[10px] font-bold transition-all ${
+                          peer.connectionStatus === 'sent' 
+                            ? 'bg-slate-100 dark:bg-slate-700 text-slate-400 cursor-not-allowed' 
+                            : 'bg-orange-50 hover:bg-orange-100 dark:bg-orange-500/10 dark:hover:bg-orange-500/20 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-500/20'
+                        }`}
+                      >
+                         {peer.connectionStatus === 'sent' ? 'Pending' : 'Connect'}
+                      </button>
+                   </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="flex-1 overflow-y-auto p-2">
             {filteredContacts.length > 0 ? (
@@ -255,7 +303,8 @@ export default function Messages() {
                    <div className="text-center text-slate-400 mt-10">Start the conversation!</div>
                 )}
                 {messages.map((msg, idx) => {
-                  const isMe = msg.sender === currentUser?._id;
+                  const messageSenderId = msg.sender?._id || msg.sender?.toString?.() || msg.sender;
+                  const isMe = messageSenderId === currentUser?._id;
                   return (
                     <div key={msg._id || idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                       <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[80%]`}>

@@ -80,7 +80,7 @@ export default function Login() {
     e.preventDefault();
     setError('');
 
-    if (userInput.toLowerCase() !== captchaText.toLowerCase()) {
+    if (userInput !== captchaText) {
       setError('Incorrect CAPTCHA entered. Please try again.');
       generateCaptcha();
       return;
@@ -141,10 +141,7 @@ export default function Login() {
           <div>
             <div className="flex justify-between items-center mb-1.5">
               <label className="block text-sm font-bold text-slate-700">Password</label>
-              <a href="#" onClick={(e) => {
-                e.preventDefault();
-                alert('Forgot password functionality will be implemented in a future update. For now, please re-register if you lost your account.');
-              }} className="text-xs text-blue-600 hover:text-blue-800 font-bold transition-colors">Forgot Password?</a>
+              <Link to="/forgot-password" className="text-xs text-blue-600 hover:text-blue-800 font-bold transition-colors">Forgot Password?</Link>
             </div>
             <input
               type="password"

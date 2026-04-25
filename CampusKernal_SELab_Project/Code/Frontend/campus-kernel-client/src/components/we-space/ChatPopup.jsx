@@ -1,19 +1,58 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Send, X, Paperclip } from 'lucide-react';
+import io from 'socket.io-client';
+import api from '../../services/api';
 
-export default function ChatPopup({ isOpen, onClose, peerName }) {
+export default function ChatPopup({ isOpen, onClose, peer }) {
   const [message, setMessage] = useState('');
-  const [chatHistory, setChatHistory] = useState([
-    { id: 1, text: "Hey Vinith, want to study for the SE Lab?", sender: "peer" },
-    { id: 2, text: "Sure! I just finished the Task Tracker module.", sender: "me" }
-  ]);
+  const [chatHistory, setChatHistory] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
+  const socketRef = useRef(null);
+
+  useEffect(() => {
+    if (!isOpen || !peer?.id) return;
+
+    const init = async () => {
+      const [meRes, messagesRes] = await Promise.all([
+        api.get('/me'),
+        api.get(`/messages/${peer.id}`)
+      ]);
+      setCurrentUser(meRes.data.user);
+      setChatHistory(messagesRes.data);
+
+      const socket = io('http://localhost:5001');
+      socketRef.current = socket;
+      socket.emit('join', meRes.data.user._id);
+      socket.on('receive_message', (incoming) => {
+        const senderId = incoming.sender?._id || incoming.sender;
+        const receiverId = incoming.receiver?._id || incoming.receiver;
+        if (senderId === peer.id || receiverId === peer.id) {
+          setChatHistory((prev) => [...prev, incoming]);
+        }
+      });
+    };
+
+    init().catch((error) => console.error('Chat popup init failed', error));
+
+    return () => {
+      socketRef.current?.disconnect();
+    };
+  }, [isOpen, peer?.id]);
 
   if (!isOpen) return null;
 
   const sendMessage = (e) => {
     e.preventDefault();
-    if (!message.trim()) return;
-    setChatHistory([...chatHistory, { id: Date.now(), text: message, sender: "me" }]);
+    if (!message.trim() || !currentUser || !peer?.id) return;
+    const optimistic = {
+      _id: Date.now().toString(),
+      sender: currentUser._id,
+      receiver: peer.id,
+      text: message,
+      createdAt: new Date().toISOString()
+    };
+    setChatHistory((prev) => [...prev, optimistic]);
+    socketRef.current?.emit('send_message', optimistic);
     setMessage('');
   };
 
@@ -23,24 +62,27 @@ export default function ChatPopup({ isOpen, onClose, peerName }) {
       <div className="bg-slate-100 dark:bg-slate-800 p-3 text-slate-900 dark:text-white flex justify-between items-center border-b border-slate-200 dark:border-slate-700">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-          <span className="font-semibold text-sm">{peerName}</span>
+          <span className="font-semibold text-sm">{peer?.name || 'Peer'}</span>
         </div>
         <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"><X size={16} /></button>
       </div>
 
       {/* Messages */}
       <div className="h-64 overflow-y-auto p-4 space-y-3 bg-white dark:bg-slate-950">
-        {chatHistory.map(msg => (
-          <div key={msg.id} className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
+        {chatHistory.map(msg => {
+          const senderId = msg.sender?._id || msg.sender;
+          const isMe = senderId === currentUser?._id;
+          return (
+          <div key={msg._id || msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[80%] px-3 py-2 rounded-md text-sm shadow-sm ${
-              msg.sender === 'me' 
+              isMe
                 ? 'bg-blue-600 text-white border border-blue-700' 
                 : 'bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200'
             }`}>
               {msg.text}
             </div>
           </div>
-        ))}
+        )})}
       </div>
 
       {/* Input */}

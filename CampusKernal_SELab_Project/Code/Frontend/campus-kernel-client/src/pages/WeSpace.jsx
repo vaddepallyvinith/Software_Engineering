@@ -736,6 +736,33 @@ export default function WeSpace() {
             </div>
           </div>
 
+          {/* Sent Requests Widget */}
+          <div className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/50 p-6 rounded-2xl shadow-xl relative overflow-hidden">
+            <h3 className="text-sm font-black text-slate-900 dark:text-white mb-5 flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm shadow-blue-500/50"></span> Sent Requests
+            </h3>
+            
+            <div className="space-y-3">
+              {networkPeers.filter(p => p.connectionStatus === 'sent').length === 0 && (
+                <div className="text-center text-slate-400 py-6 text-xs bg-slate-50 dark:bg-slate-800/20 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">No sent requests</div>
+              )}
+              {networkPeers.filter(p => p.connectionStatus === 'sent').map(p => (
+                <div key={p.id} className="p-3.5 bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center justify-between opacity-80">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 text-slate-700 dark:text-slate-200 font-extrabold flex items-center justify-center text-sm shadow-inner relative border border-white dark:border-slate-600">
+                      {p.name && p.name.length > 0 ? p.name[0] : '?'}
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight leading-tight">{p.name}</h4>
+                      <p className="text-[10px] font-semibold text-slate-500">{p.tags?.[0] || 'Peer'}</p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">Pending</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* Active Collaborators Widget */}
           <div className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/50 p-6 rounded-2xl shadow-xl relative overflow-hidden">
              <h3 className="text-sm font-black text-slate-900 dark:text-white mb-5 flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
@@ -775,7 +802,7 @@ export default function WeSpace() {
 
       {/* OVERLAYS */}
       {activeRoom && <StudyRoomLive room={activeRoom} onLeave={handleLeaveRoom} currentUser={currentUser} socket={socketRef.current} />}
-      <ChatPopup isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} peerName={selectedPeer?.name} />
+      <ChatPopup isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} peer={selectedPeer} />
       {isCreateOpen && <CreateRoomModal onClose={() => setIsCreateOpen(false)} onCreated={handleRoomCreatedOrEdited} editingRoom={null} />}
       {editingRoom && <CreateRoomModal onClose={() => setEditingRoom(null)} onCreated={handleRoomCreatedOrEdited} editingRoom={editingRoom} />}
       {isSynergyOpen && <EditSynergyModal onClose={() => setIsSynergyOpen(false)} onSaved={handleSynergyUpdated} currentUser={currentUser} />}
