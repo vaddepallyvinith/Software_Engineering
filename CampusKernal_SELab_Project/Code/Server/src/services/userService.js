@@ -1,73 +1,47 @@
 import bcrypt from 'bcryptjs';
-import { readDb, writeDb } from '../data/db.js';
-import { createId } from '../utils/ids.js';
-import { nowIso } from '../utils/time.js';
+import { User } from '../models/User.js';
 
-const sanitizeTask = (task) => ({
-  id: task.id || createId(),
-  title: String(task.title || '').trim(),
-  subject: String(task.subject || '').trim(),
-  deadline: task.deadline,
-  priority: task.priority || 'Medium',
-  status: task.status || 'Not Started',
-});
+const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-const sanitizeEvent = (event) => ({
-  id: event.id || createId(),
-  date: event.date,
-  title: String(event.title || '').trim(),
-  time: event.time,
-  room: String(event.room || '').trim(),
-});
-
-const sanitizeRecord = (record) => ({
-  id: record.id || createId(),
-  subject: String(record.subject || '').trim(),
-  credits: Number(record.credits || 0),
-  grade: record.grade,
-  semester: Number(record.semester || 1),
-  finalized: Boolean(record.finalized),
-});
-
-const toPublicUser = (user) => ({
-  _id: user.id,
-  id: user.id,
-  name: user.name,
-  email: user.email,
-  role: user.role,
-  isVerified: user.isVerified,
-  profile: user.profile,
-  cgpa: user.cgpa,
-  tasks: user.tasks.map((task) => ({ ...task, _id: task.id })),
-  events: user.events.map((event) => ({ ...event, _id: event.id })),
-  records: user.records.map((record) => ({ ...record, _id: record.id })),
-  createdAt: user.createdAt,
-  updatedAt: user.updatedAt,
-});
+const toPublicUser = (userDoc) => {
+  const user = userDoc.toJSON ? userDoc.toJSON() : userDoc;
+  return {
+    _id: user.id,
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    isVerified: user.isVerified,
+    profile: user.profile,
+    cgpa: user.cgpa,
+    tasks: (user.tasks || []).map((task) => ({ ...task, _id: task.id })),
+    events: (user.events || []).map((event) => ({ ...event, _id: event.id })),
+    records: (user.records || []).map((record) => ({ ...record, _id: record.id })),
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
+};
 
 export const getPublicUserById = async (userId) => {
-  const db = await readDb();
-  const user = db.users.find((item) => item.id === userId);
+  const user = await User.findById(userId);
   return user ? toPublicUser(user) : null;
 };
 
 export const getUserByEmail = async (email) => {
-  const db = await readDb();
-  return db.users.find((user) => user.email.toLowerCase() === String(email || '').toLowerCase()) || null;
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+  return await User.findOne({ email: new RegExp(`^${escapeRegex(normalizedEmail)}$`, 'i') });
 };
 
 export const createUser = async (payload) => {
-  const db = await readDb();
   const email = String(payload.email || '').trim().toLowerCase();
 
-  if (db.users.some((user) => user.email.toLowerCase() === email)) {
+  const existing = await User.findOne({ email: new RegExp(`^${escapeRegex(email)}$`, 'i') });
+  if (existing) {
     throw new Error('An account with this email already exists. Please log in.');
   }
 
-  const now = nowIso();
   const passwordHash = await bcrypt.hash(payload.password, 10);
-  const user = {
-    id: createId(),
+  const user = new User({
     name: String(payload.name || '').trim(),
     email,
     passwordHash,
@@ -87,22 +61,20 @@ export const createUser = async (payload) => {
     tasks: [],
     events: [],
     records: [],
-    resetToken: null,
-    resetTokenExpiresAt: null,
-    createdAt: now,
-    updatedAt: now,
-  };
+  });
 
-  db.users.push(user);
-  await writeDb(db);
+  await user.save();
   return toPublicUser(user);
 };
 
-export const verifyUserPassword = async (user, password) => bcrypt.compare(password, user.passwordHash);
+export const verifyUserPassword = async (user, password) => {
+  const storedHash = user.passwordHash || user.password;
+  if (!storedHash) return false;
+  return bcrypt.compare(password, storedHash);
+};
 
 export const updateUser = async (userId, updates) => {
-  const db = await readDb();
-  const user = db.users.find((item) => item.id === userId);
+  const user = await User.findById(userId);
   if (!user) return null;
 
   if (typeof updates.name === 'string') user.name = updates.name.trim();
@@ -112,51 +84,75 @@ export const updateUser = async (userId, updates) => {
   if (typeof updates.location === 'string') user.profile.location = updates.location.trim();
   if (Array.isArray(updates.skills)) user.profile.skills = updates.skills.filter(Boolean);
   if (typeof updates.cgpa !== 'undefined') user.cgpa = Number(updates.cgpa || 0);
-  if (Array.isArray(updates.tasks)) user.tasks = updates.tasks.map(sanitizeTask);
-  if (Array.isArray(updates.events)) user.events = updates.events.map(sanitizeEvent);
-  if (Array.isArray(updates.records)) user.records = updates.records.map(sanitizeRecord);
-  user.updatedAt = nowIso();
+  
+  if (Array.isArray(updates.tasks)) {
+    user.tasks = updates.tasks;
+  }
+  if (Array.isArray(updates.events)) {
+    user.events = updates.events;
+  }
+  if (Array.isArray(updates.records)) {
+    user.records = updates.records;
+  }
 
-  await writeDb(db);
+  await user.save();
   return toPublicUser(user);
 };
 
 export const setResetToken = async (email, token, expiresAt) => {
-  const db = await readDb();
-  const user = db.users.find((item) => item.email.toLowerCase() === String(email || '').toLowerCase());
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+  const user = await User.findOne({ email: new RegExp(`^${escapeRegex(normalizedEmail)}$`, 'i') });
   if (!user) return null;
   user.resetToken = token;
   user.resetTokenExpiresAt = expiresAt;
-  user.updatedAt = nowIso();
-  await writeDb(db);
+  user.resetPasswordToken = token;
+  user.resetPasswordExpire = expiresAt;
+  await user.save();
   return user;
 };
 
 export const resetPasswordWithToken = async (token, password) => {
-  const db = await readDb();
-  const user = db.users.find((item) => item.resetToken === token && item.resetTokenExpiresAt && new Date(item.resetTokenExpiresAt) > new Date());
+  const user = await User.findOne({ 
+    $or: [
+      {
+        resetToken: token,
+        resetTokenExpiresAt: { $gt: new Date().toISOString() }
+      },
+      {
+        resetPasswordToken: token,
+        resetPasswordExpire: { $gt: new Date().toISOString() }
+      }
+    ]
+  });
   if (!user) return null;
-  user.passwordHash = await bcrypt.hash(password, 10);
+  const newHash = await bcrypt.hash(password, 10);
+  user.passwordHash = newHash;
+  user.password = newHash;
   user.resetToken = null;
   user.resetTokenExpiresAt = null;
-  user.updatedAt = nowIso();
-  await writeDb(db);
+  user.resetPasswordToken = null;
+  user.resetPasswordExpire = null;
+  await user.save();
   return toPublicUser(user);
 };
 
 export const changeUserPassword = async (userId, currentPassword, newPassword) => {
-  const db = await readDb();
-  const user = db.users.find((item) => item.id === userId);
+  const user = await User.findById(userId);
   if (!user) throw new Error('User not found');
   
-  const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
+  const storedHash = user.passwordHash || user.password;
+  if (!storedHash) {
+    throw new Error('Password is not set for this account');
+  }
+
+  const isValid = await bcrypt.compare(currentPassword, storedHash);
   if (!isValid) {
     throw new Error('Incorrect current password');
   }
   
-  user.passwordHash = await bcrypt.hash(newPassword, 10);
-  user.updatedAt = nowIso();
-  await writeDb(db);
+  const newHash = await bcrypt.hash(newPassword, 10);
+  user.passwordHash = newHash;
+  user.password = newHash;
+  await user.save();
   return true;
 };
-

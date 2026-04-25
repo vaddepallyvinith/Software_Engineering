@@ -1,92 +1,81 @@
-import { readDb, writeDb } from '../data/db.js';
-import { createId } from '../utils/ids.js';
-import { nowIso } from '../utils/time.js';
+import { Message } from '../models/Message.js';
+import { User } from '../models/User.js';
 
-const enrichMessage = (message) => ({
-  _id: message.id,
-  id: message.id,
-  sender: message.senderId,
-  receiver: message.receiverId,
-  text: message.text,
-  read: Boolean(message.read),
-  createdAt: message.createdAt,
-  updatedAt: message.updatedAt,
-});
+const enrichMessage = (messageDoc) => {
+  const message = messageDoc.toJSON ? messageDoc.toJSON() : messageDoc;
+  return {
+    _id: message.id,
+    id: message.id,
+    sender: message.senderId,
+    receiver: message.receiverId,
+    text: message.text,
+    read: Boolean(message.read),
+    createdAt: message.createdAt,
+    updatedAt: message.updatedAt,
+  };
+};
 
 export const getMessagesBetweenUsers = async (userId, peerId) => {
-  const db = await readDb();
-  return db.messages
-    .filter((message) => (
-      (message.senderId === userId && message.receiverId === peerId) ||
-      (message.senderId === peerId && message.receiverId === userId)
-    ))
-    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
-    .map(enrichMessage);
+  const messages = await Message.find({
+    $or: [
+      { senderId: userId, receiverId: peerId },
+      { senderId: peerId, receiverId: userId },
+    ]
+  }).sort({ createdAt: 1 });
+  
+  return messages.map(enrichMessage);
 };
 
 export const createDirectMessage = async ({ senderId, receiverId, text }) => {
-  const db = await readDb();
-  const now = nowIso();
-  const message = {
-    id: createId(),
+  const message = new Message({
     senderId,
     receiverId,
     text: String(text || '').trim(),
     read: false,
-    createdAt: now,
-    updatedAt: now,
-  };
-  db.messages.push(message);
-  await writeDb(db);
+  });
+  await message.save();
   return enrichMessage(message);
 };
 
 export const markMessagesRead = async ({ senderId, receiverId }) => {
-  const db = await readDb();
-  let updated = false;
-
-  db.messages.forEach((message) => {
-    if (message.senderId === senderId && message.receiverId === receiverId && !message.read) {
-      message.read = true;
-      message.updatedAt = nowIso();
-      updated = true;
-    }
-  });
-
-  if (updated) {
-    await writeDb(db);
-  }
+  await Message.updateMany(
+    { senderId, receiverId, read: false },
+    { $set: { read: true } }
+  );
 };
 
 export const getContactsForUser = async (userId) => {
-  const db = await readDb();
+  const allUsers = await User.find({ _id: { $ne: userId } });
+  
+  const messages = await Message.find({
+    $or: [
+      { senderId: userId },
+      { receiverId: userId }
+    ]
+  }).sort({ createdAt: -1 });
 
-  return db.users
-    .filter((user) => user.id !== userId)
-    .map((user) => {
-      const conversation = db.messages
-        .filter((message) => (
-          (message.senderId === userId && message.receiverId === user.id) ||
-          (message.senderId === user.id && message.receiverId === userId)
-        ))
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  return allUsers.map((user) => {
+    const conversation = messages.filter(
+      (m) => m.senderId.toString() === user._id.toString() || m.receiverId.toString() === user._id.toString()
+    );
 
-      const latest = conversation[0];
-      const unread = conversation.filter((message) => message.senderId === user.id && message.receiverId === userId && !message.read).length;
+    const latest = conversation[0];
+    const unread = conversation.filter(
+      (m) => m.senderId.toString() === user._id.toString() && m.receiverId.toString() === userId.toString() && !m.read
+    ).length;
 
-      return {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        lastMsg: latest?.text || 'No messages yet',
-        time: latest?.createdAt || null,
-        unread,
-        online: false,
-      };
-    });
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      lastMsg: latest ? latest.text : 'No messages yet',
+      time: latest ? latest.createdAt : null,
+      unread,
+      online: false,
+    };
+  });
 };
 
 export const getUnreadCount = async (userId) => {
-  const db = await readDb();
-  return db.messages.filter((message) => message.receiverId === userId && !message.read).length;
+  return await Message.countDocuments({ receiverId: userId, read: false });
 };

@@ -511,14 +511,21 @@ export default function WeSpace() {
         if (connectedPeer) {
            setNetworkPeers(prev => [...prev, { ...connectedPeer, connectionStatus: 'sent' }]);
         }
-     } catch(e) { console.error(e); alert("Failed to send request."); }
+     } catch(e) {
+        console.error(e);
+        alert(e?.response?.data?.message || "Failed to send request.");
+     }
   };
 
   const handleAccept = async (peerId) => {
      try {
         await api.put(`/synergy/accept/${peerId}`);
-        setNetworkPeers(prev => prev.map(p => p.id === peerId ? { ...p, connectionStatus: 'connected' } : p));
-     } catch(e) { console.error(e); alert("Failed to accept request."); }
+        const networkRes = await api.get('/synergy/network');
+        setNetworkPeers(networkRes.data);
+     } catch(e) {
+        console.error(e);
+        alert(e?.response?.data?.message || "Failed to accept request.");
+     }
   };
 
   const filteredMatchPeers = matchPeers.filter(p => 

@@ -4,6 +4,7 @@ import MeSpace from './pages/MeSpace';
 import WeSpace from './pages/WeSpace';
 import Messages from './pages/Messages';
 import Settings from './pages/Settings';
+import AdminPortal from './pages/AdminPortal';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
@@ -31,6 +32,7 @@ function AppLayout() {
           <Route path="/we-space" element={<ProtectedRoute><WeSpace /></ProtectedRoute>} />
           <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute><AdminPortal /></ProtectedRoute>} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />

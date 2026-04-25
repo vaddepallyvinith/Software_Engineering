@@ -21,49 +21,53 @@ router.post('/register', async (req, res) => {
 });
 
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ message: 'Please provide both email and password.' });
-  }
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Please provide both email and password.' });
+    }
 
-  const user = await getUserByEmail(email);
-  if (!user || !(await verifyUserPassword(user, password))) {
-    return res.status(401).json({ message: 'Invalid email or password.' });
-  }
+    const user = await getUserByEmail(email);
+    if (!user || !(await verifyUserPassword(user, password))) {
+      return res.status(401).json({ message: 'Invalid email or password.' });
+    }
 
-  return res.status(200).json({
-    message: 'Login successful!',
-    token: signToken(user.id),
-    user: {
-      _id: user.id,
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      profile: user.profile,
-      isVerified: user.isVerified,
-    },
-  });
+    return res.status(200).json({
+      message: 'Login successful!',
+      token: signToken(user.id),
+      user: {
+        _id: user.id,
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profile: user.profile,
+        isVerified: user.isVerified,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message || 'Login failed.' });
+  }
 });
 
 router.post('/forgot-password', async (req, res) => {
-  const user = await getUserByEmail(req.body.email);
-  if (!user) {
-    return res.status(200).json({ message: 'If an account with that email exists, we sent a password reset link.' });
-  }
-
-  if (!canSendMail()) {
-    return res.status(500).json({
-      message: 'Password reset email is not configured yet. Set the SMTP_* variables on the server first.',
-    });
-  }
-
-  const token = crypto.randomBytes(24).toString('hex');
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-  await setResetToken(user.email, token, expiresAt);
-  const resetUrl = `${config.clientUrl}/reset-password/${token}`;
-
   try {
+    const user = await getUserByEmail(req.body.email);
+    if (!user) {
+      return res.status(200).json({ message: 'If an account with that email exists, we sent a password reset link.' });
+    }
+
+    if (!canSendMail()) {
+      return res.status(500).json({
+        message: 'Password reset email is not configured yet. Set the SMTP_* variables on the server first.',
+      });
+    }
+
+    const token = crypto.randomBytes(24).toString('hex');
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+    await setResetToken(user.email, token, expiresAt);
+    const resetUrl = `${config.clientUrl}/reset-password/${token}`;
+
     await sendPasswordResetMail({
       to: user.email,
       name: user.name,

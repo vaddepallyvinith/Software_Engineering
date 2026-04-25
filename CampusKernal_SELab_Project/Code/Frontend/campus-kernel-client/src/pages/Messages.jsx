@@ -151,7 +151,7 @@ export default function Messages() {
       ));
     } catch(e) {
       console.error(e);
-      alert("Failed to send request.");
+      alert(e?.response?.data?.message || "Failed to send request.");
     }
   };
   

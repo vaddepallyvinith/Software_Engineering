@@ -1,221 +1,227 @@
 # Campus Kernel
 
-Campus Kernel is a student collaboration app with three main areas:
+Campus Kernel is a full-stack student collaboration platform with:
 
-- `Me Space`: personal dashboard for tasks, timetable events, grades, and CGPA.
-- `We Space`: peer matching, connection requests, live study rooms, and quick chat.
-- `Messages`: direct real-time messaging between users.
+- `Me Space` for profile, tasks, records, and events
+- `Synergy Space` for peer discovery and connection requests
+- `We Space` for study rooms, live presence, chat, and WebRTC signaling
+- JWT-based authentication and password reset email support
 
-This version was simplified on purpose:
-
-- The backend is plain JavaScript.
-- The database is a single JSON file.
-- The code is split into small routes and services instead of TypeScript models/controllers.
+The backend now uses `MongoDB Atlas` through `mongoose`. Local JSON-file storage is no longer part of the runtime architecture.
 
 ## Project Structure
 
 ```text
 Code/
-├── Frontend/campus-kernel-client
-│   ├── src/pages
-│   ├── src/components
-│   └── src/services/api.js
-└── Server
-    ├── src/index.js
-    ├── src/auth.js
-    ├── src/socket.js
-    ├── src/data/database.json
-    ├── src/data/db.js
-    ├── src/routes
-    └── src/services
+├── Frontend/
+│   └── campus-kernel-client/
+└── Server/
+    ├── package.json
+    ├── .env
+    └── src/
+        ├── index.js
+        ├── config.js
+        ├── auth.js
+        ├── mailer.js
+        ├── socket.js
+        ├── models/
+        ├── routes/
+        ├── services/
+        └── utils/
 ```
 
-## Backend Design
+## Tech Stack
 
-The backend uses `Express + Socket.IO + JWT`.
+### Frontend
 
-### 1. Data storage
+- `React`
+- `Vite`
+- `React Router`
+- `Axios`
+- `socket.io-client`
 
-All persistent data lives in:
+### Backend
 
-- `Server/src/data/database.json`
+- `Node.js`
+- `Express`
+- `Socket.IO`
+- `mongoose`
+- `jsonwebtoken`
+- `bcryptjs`
+- `nodemailer`
+- `dotenv`
 
-The file stores four main collections:
+## Backend Architecture
 
-- `users`
-- `connections`
-- `messages`
-- `rooms`
+The backend is organized in a standard API flow:
 
-On first run, the server seeds demo users, messages, a room, and one accepted connection.
+- `routes/` exposes HTTP endpoints
+- `services/` contains business logic
+- `models/` defines MongoDB collections and embedded schemas
+- `auth.js` validates JWTs
+- `socket.js` handles real-time messaging, room presence, and WebRTC signaling
+- `config.js` centralizes environment variables
 
-### 2. Services
+### MongoDB Models
 
-Business logic is kept in small service files:
+- `User`: authentication, profile, tasks, events, academic records, password reset token
+- `Message`: direct messages between users
+- `Room`: study room metadata, participants, and embedded room messages
+- `Connection`: connection requests between users
 
-- `src/services/userService.js`
-- `src/services/messageService.js`
-- `src/services/roomService.js`
-- `src/services/synergyService.js`
+## Environment Variables
 
-These files read and write the JSON database and keep route handlers small.
+Create `Server/.env` with values like:
 
-### 3. Routes
+```env
+PORT=5001
+CLIENT_URL=http://localhost:5173
+JWT_SECRET=replace-this-with-a-strong-secret
+MONGO_URI=mongodb+srv://<username>:<password>@<cluster-url>/<db-name>?retryWrites=true&w=majority
+
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-user@example.com
+SMTP_PASS=your-password
+SMTP_FROM=Campus Kernel <no-reply@example.com>
+```
+
+Notes:
+
+- `MONGO_URI` is required for persistent app data.
+- If `MONGO_URI` is missing, the server still starts but database-backed features will fail at runtime.
+- SMTP is optional. If it is not configured, forgot-password email sending will return an error message.
+
+## Installation
+
+### Backend
+
+```bash
+cd Server
+npm install
+```
+
+### Frontend
+
+```bash
+cd Frontend/campus-kernel-client
+npm install
+```
+
+## Running Locally
+
+Start the backend:
+
+```bash
+cd Server
+npm run dev
+```
+
+Start the frontend in another terminal:
+
+```bash
+cd Frontend/campus-kernel-client
+npm run dev
+```
+
+Default local URLs:
+
+- frontend: `http://localhost:5173`
+- backend API: `http://localhost:5001`
+
+The frontend uses `VITE_API_URL` if provided; otherwise it defaults to `http://localhost:5001/api`.
+
+## Main API Areas
+
+### Auth
 
 - `POST /api/auth/register`
 - `POST /api/auth/login`
 - `POST /api/auth/forgot-password`
 - `POST /api/auth/reset-password/:token`
+
+### Me Space
+
 - `GET /api/me`
 - `PUT /api/me/update`
+- `PUT /api/me/password`
+
+### Messages
+
 - `GET /api/messages/contacts`
 - `GET /api/messages/unread`
 - `GET /api/messages/:peerId`
+
+### Study Rooms
+
 - `GET /api/rooms`
 - `POST /api/rooms`
 - `PUT /api/rooms/:id`
 - `DELETE /api/rooms/:id`
+
+### Synergy
+
 - `GET /api/synergy/matches`
 - `GET /api/synergy/network`
 - `POST /api/synergy/connect/:userId`
 - `PUT /api/synergy/accept/:userId`
 
-### 4. Authentication
+## Socket Events
 
-- JWT tokens are created in `src/auth.js`.
-- Protected routes use `requireAuth`.
-- The frontend stores the token in `localStorage`.
-- `src/services/api.js` automatically adds `Authorization: Bearer <token>`.
+Implemented in [src/socket.js](/Users/shankar/Documents/CampusKernal/Software_Engineering/CampusKernal_SELab_Project/Code/Server/src/socket.js):
 
-### 5. Real-time features
+- `join`
+- `send_message`
+- `receive_message`
+- `mark_read`
+- `messages_read`
+- `join_study_room`
+- `leave_study_room`
+- `room_updated`
+- `room_message`
+- `webrtc_signal`
+- `screen_share_status`
+- `admin_deleted_room`
 
-`src/socket.js` handles:
+## Atlas Migration Notes
 
-- direct chat messages
-- message read receipts
-- study room presence
-- room live chat
-- WebRTC signaling
-- screen share status
+The current codebase is already using MongoDB-backed services and Mongoose models. The main migration-sensitive points are:
 
-## Frontend Design
+- user, room, message, and connection data now rely on Mongo document IDs
+- user profile data, tasks, events, and records are stored on the `User` document
+- direct messages are stored in the `Message` collection
+- study room participants are stored as `ObjectId` references to `User`
+- room membership checks must compare `ObjectId` values correctly, not with plain array equality
 
-The frontend is React + Vite.
+## Current Review Result
 
-### Main pages
+The MongoDB Atlas migration is mostly wired correctly:
 
-- `Login` and `Register`: authentication.
-- `ForgotPassword` and `ResetPassword`: password reset by email.
-- `MeSpace`: personal academic dashboard.
-- `WeSpace`: peer matching, study rooms, and quick popup chat.
-- `Messages`: full direct messaging screen.
-- `Settings`: profile editing.
+- `mongoose` is installed and imported
+- `MONGO_URI` is read from environment config
+- models and services use MongoDB instead of local JSON files
+- the previous README content was outdated and referenced removed `data/db.js` and `database.json`
 
-### How the main features work
+One concrete issue was fixed:
 
-#### Me Space
+- room participant membership in `joinRoom()` was using `includes(userId)`, which does not work reliably with Mongo `ObjectId` values and could allow duplicate joins
 
-- Tasks are edited in `TaskList.jsx`.
-- Calendar events are edited in `EventsCalendar.jsx`.
-- Academic records and CGPA are edited in `PerformanceTracker.jsx`.
-- All of them save through `PUT /api/me/update`.
+## Known Operational Notes
 
-#### We Space
+- The server currently starts listening even if MongoDB is not connected. That is acceptable for development, but production startup would be safer if it failed fast on database connection errors.
+- Room chat socket events are broadcast live, but they are not currently persisted into the `Room.messages` array.
+- The repository contains a real `Server/.env` file. If it contains actual credentials, rotate them and avoid committing secrets.
 
-- Synergy cards come from `GET /api/synergy/matches`.
-- Connection requests and accepted peers come from `GET /api/synergy/network`.
-- Study rooms come from `GET /api/rooms`.
-- Room create/edit/delete uses the room endpoints.
-- Live room state updates come through Socket.IO.
+## Important Files
 
-#### Messages
-
-- Contacts come from `GET /api/messages/contacts`.
-- Message history comes from `GET /api/messages/:peerId`.
-- New messages are sent with Socket.IO.
-- Read status is updated with the `mark_read` socket event.
-
-## Setup
-
-### Backend
-
-From `Code/Server`:
-
-```bash
-npm install
-npm run dev
-```
-
-The backend starts on `http://localhost:5001`.
-
-Important files:
-
-- `.env`
-- `src/data/database.json`
-
-Current `.env` values:
-
-```env
-PORT=5001
-CLIENT_URL=http://localhost:5173
-JWT_SECRET=campus-kernel-dev-secret
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=your-email@example.com
-SMTP_PASS=your-app-password
-SMTP_FROM="Campus Kernel <your-email@example.com>"
-```
-
-For Gmail, use an app password instead of your normal account password.
-
-### Frontend
-
-From `Code/Frontend/campus-kernel-client`:
-
-```bash
-npm install
-npm run dev
-```
-
-The frontend runs on `http://localhost:5173`.
-
-Optional frontend env:
-
-```env
-VITE_API_URL=http://localhost:5001/api
-```
-
-## Demo Accounts
-
-All seeded users use the same password:
-
-- `aarav@campuskernel.dev`
-- `bhavani@campuskernel.dev`
-- `ananya@campuskernel.dev`
-
-Password:
-
-```text
-password123
-```
-
-## Simplifications Made
-
-- Removed MongoDB and Mongoose.
-- Removed TypeScript backend code.
-- Replaced complex backend layers with simple JavaScript services.
-- Password reset now sends a real email through SMTP.
-- Settings save now updates the backend.
-- Quick chat popup now uses real API/socket data instead of static mock messages.
-
-## Verification
-
-Checked successfully:
-
-- backend JavaScript syntax with `node --check`
-- frontend production build with `npm run build`
-
-Note:
-
-- Starting the backend listener inside this sandbox was blocked by port permissions (`EPERM`), so runtime socket testing could not be completed inside the sandbox itself.
+- [Server/src/index.js](/Users/shankar/Documents/CampusKernal/Software_Engineering/CampusKernal_SELab_Project/Code/Server/src/index.js)
+- [Server/src/config.js](/Users/shankar/Documents/CampusKernal/Software_Engineering/CampusKernal_SELab_Project/Code/Server/src/config.js)
+- [Server/src/models/User.js](/Users/shankar/Documents/CampusKernal/Software_Engineering/CampusKernal_SELab_Project/Code/Server/src/models/User.js)
+- [Server/src/models/Message.js](/Users/shankar/Documents/CampusKernal/Software_Engineering/CampusKernal_SELab_Project/Code/Server/src/models/Message.js)
+- [Server/src/models/Room.js](/Users/shankar/Documents/CampusKernal/Software_Engineering/CampusKernal_SELab_Project/Code/Server/src/models/Room.js)
+- [Server/src/models/Connection.js](/Users/shankar/Documents/CampusKernal/Software_Engineering/CampusKernal_SELab_Project/Code/Server/src/models/Connection.js)
+- [Server/src/services/userService.js](/Users/shankar/Documents/CampusKernal/Software_Engineering/CampusKernal_SELab_Project/Code/Server/src/services/userService.js)
+- [Server/src/services/messageService.js](/Users/shankar/Documents/CampusKernal/Software_Engineering/CampusKernal_SELab_Project/Code/Server/src/services/messageService.js)
+- [Server/src/services/roomService.js](/Users/shankar/Documents/CampusKernal/Software_Engineering/CampusKernal_SELab_Project/Code/Server/src/services/roomService.js)
+- [Server/src/services/synergyService.js](/Users/shankar/Documents/CampusKernal/Software_Engineering/CampusKernal_SELab_Project/Code/Server/src/services/synergyService.js)

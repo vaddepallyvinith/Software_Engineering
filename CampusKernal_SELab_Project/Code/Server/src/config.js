@@ -6,6 +6,7 @@ export const config = {
   port: Number(process.env.PORT || 5001),
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
   jwtSecret: process.env.JWT_SECRET || 'campus-kernel-dev-secret',
+  mongoUri: process.env.MONGO_URI || '',
   mail: {
     host: process.env.SMTP_HOST || '',
     port: Number(process.env.SMTP_PORT || 587),

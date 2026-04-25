@@ -9,6 +9,29 @@ export default function ChatPopup({ isOpen, onClose, peer }) {
   const [currentUser, setCurrentUser] = useState(null);
   const socketRef = useRef(null);
 
+  const appendUniqueMessage = (incomingMessage) => {
+    setChatHistory((prev) => {
+      const incomingSenderId = incomingMessage.sender?._id || incomingMessage.sender;
+      const incomingReceiverId = incomingMessage.receiver?._id || incomingMessage.receiver;
+
+      const exists = prev.some((existingMessage) => {
+        const existingSenderId = existingMessage.sender?._id || existingMessage.sender;
+        const existingReceiverId = existingMessage.receiver?._id || existingMessage.receiver;
+
+        if (incomingMessage._id && existingMessage._id === incomingMessage._id) return true;
+
+        return (
+          existingSenderId === incomingSenderId &&
+          existingReceiverId === incomingReceiverId &&
+          existingMessage.text === incomingMessage.text &&
+          existingMessage.createdAt === incomingMessage.createdAt
+        );
+      });
+
+      return exists ? prev : [...prev, incomingMessage];
+    });
+  };
+
   useEffect(() => {
     if (!isOpen || !peer?.id) return;
 
@@ -27,7 +50,7 @@ export default function ChatPopup({ isOpen, onClose, peer }) {
         const senderId = incoming.sender?._id || incoming.sender;
         const receiverId = incoming.receiver?._id || incoming.receiver;
         if (senderId === peer.id || receiverId === peer.id) {
-          setChatHistory((prev) => [...prev, incoming]);
+          appendUniqueMessage(incoming);
         }
       });
     };
@@ -44,15 +67,11 @@ export default function ChatPopup({ isOpen, onClose, peer }) {
   const sendMessage = (e) => {
     e.preventDefault();
     if (!message.trim() || !currentUser || !peer?.id) return;
-    const optimistic = {
-      _id: Date.now().toString(),
+    socketRef.current?.emit('send_message', {
       sender: currentUser._id,
       receiver: peer.id,
       text: message,
-      createdAt: new Date().toISOString()
-    };
-    setChatHistory((prev) => [...prev, optimistic]);
-    socketRef.current?.emit('send_message', optimistic);
+    });
     setMessage('');
   };
 

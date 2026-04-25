@@ -16,9 +16,14 @@ export default function Login() {
 
   // Redirect if already logged in
   useEffect(() => {
-    if (localStorage.getItem('token')) {
-      navigate('/');
-    }
+    const existingToken = localStorage.getItem('token');
+    if (!existingToken) return;
+
+    api.get('/me')
+      .then(() => navigate('/'))
+      .catch(() => {
+        localStorage.removeItem('token');
+      });
   }, [navigate]);
 
   useEffect(() => {
@@ -90,6 +95,9 @@ export default function Login() {
     try {
       const response = await api.post('/auth/login', formData);
       localStorage.setItem('token', response.data.token);
+      if (response.data.user) {
+        localStorage.setItem('currentUserId', response.data.user._id || response.data.user.id);
+      }
       navigate('/');
     } catch (err) {
       setError(err?.response?.data?.message || 'Login failed. Please try again.');

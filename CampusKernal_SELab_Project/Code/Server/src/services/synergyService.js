@@ -1,6 +1,18 @@
-import { readDb, writeDb } from '../data/db.js';
-import { createId } from '../utils/ids.js';
-import { nowIso } from '../utils/time.js';
+import mongoose from 'mongoose';
+import { Connection } from '../models/Connection.js';
+import { User } from '../models/User.js';
+
+const buildConnectionPairQuery = (leftId, rightId) => ({
+  $or: [
+    { requesterId: leftId, recipientId: rightId },
+    { requesterId: rightId, recipientId: leftId },
+    { requester: leftId, recipient: rightId },
+    { requester: rightId, recipient: leftId },
+  ]
+});
+
+const getConnectionRequester = (connection) => connection.requesterId || connection.requester;
+const getConnectionRecipient = (connection) => connection.recipientId || connection.recipient;
 
 const calculateMatch = (me, peer) => {
   let score = 20;
@@ -18,7 +30,7 @@ const calculateMatch = (me, peer) => {
 };
 
 const toPeerCard = (peer, match, connectionStatus = 'none') => ({
-  id: peer.id,
+  id: peer.id || peer._id,
   name: peer.name,
   location: peer.profile.location || 'Campus',
   tags: peer.profile.skills || [],
@@ -28,32 +40,60 @@ const toPeerCard = (peer, match, connectionStatus = 'none') => ({
 });
 
 export const getMatches = async (userId) => {
-  const db = await readDb();
-  const me = db.users.find((user) => user.id === userId);
+  const me = await User.findById(userId);
   if (!me) return null;
 
-  const existingIds = new Set([userId]);
-  db.connections.forEach((connection) => {
-    if (connection.requesterId === userId) existingIds.add(connection.recipientId);
-    if (connection.recipientId === userId) existingIds.add(connection.requesterId);
+  const connections = await Connection.find({
+    $or: [
+      { requesterId: userId },
+      { recipientId: userId },
+      { requester: userId },
+      { recipient: userId },
+    ]
   });
 
-  return db.users
-    .filter((user) => !existingIds.has(user.id))
+  const existingIds = new Set([userId.toString()]);
+  connections.forEach((conn) => {
+    const requester = getConnectionRequester(conn);
+    const recipient = getConnectionRecipient(conn);
+    if (!requester || !recipient) return;
+
+    if (requester.toString() === userId.toString()) existingIds.add(recipient.toString());
+    if (recipient.toString() === userId.toString()) existingIds.add(requester.toString());
+  });
+
+  const allUsers = await User.find({ _id: { $nin: Array.from(existingIds) } });
+
+  return allUsers
     .map((peer) => toPeerCard(peer, calculateMatch(me, peer)))
     .sort((a, b) => b.match - a.match)
     .slice(0, 10);
 };
 
 export const getNetwork = async (userId) => {
-  const db = await readDb();
+  const connections = await Connection.find({
+    $or: [
+      { requesterId: userId },
+      { recipientId: userId },
+      { requester: userId },
+      { recipient: userId },
+    ]
+  })
+    .populate('requesterId')
+    .populate('recipientId')
+    .populate('requester')
+    .populate('recipient');
 
-  return db.connections
-    .filter((connection) => connection.requesterId === userId || connection.recipientId === userId)
+  return connections
     .map((connection) => {
-      const isRequester = connection.requesterId === userId;
-      const peerId = isRequester ? connection.recipientId : connection.requesterId;
-      const peer = db.users.find((user) => user.id === peerId);
+      const requester = getConnectionRequester(connection);
+      const recipient = getConnectionRecipient(connection);
+      if (!requester || !recipient) return null;
+
+      const requesterId = requester._id?.toString?.() || requester.toString();
+      const isRequester = requesterId === userId.toString();
+      const peer = isRequester ? recipient : requester;
+      
       if (!peer) return null;
 
       let connectionStatus = 'connected';
@@ -62,7 +102,7 @@ export const getNetwork = async (userId) => {
       }
 
       return {
-        id: peer.id,
+        id: peer._id || peer.id,
         name: peer.name,
         location: peer.profile.location || 'Campus',
         tags: peer.profile.skills || [],
@@ -74,36 +114,53 @@ export const getNetwork = async (userId) => {
 };
 
 export const sendRequest = async (requesterId, recipientId) => {
-  const db = await readDb();
-  if (requesterId === recipientId) return { status: 400, message: 'Cannot connect to yourself' };
+  if (!mongoose.Types.ObjectId.isValid(requesterId) || !mongoose.Types.ObjectId.isValid(recipientId)) {
+    return { status: 400, message: 'Invalid user id' };
+  }
 
-  const exists = db.connections.find((connection) => (
-    (connection.requesterId === requesterId && connection.recipientId === recipientId) ||
-    (connection.requesterId === recipientId && connection.recipientId === requesterId)
-  ));
+  if (requesterId.toString() === recipientId.toString()) return { status: 400, message: 'Cannot connect to yourself' };
+
+  const recipient = await User.findById(recipientId).select('_id');
+  if (!recipient) {
+    return { status: 404, message: 'User not found' };
+  }
+
+  const exists = await Connection.findOne({
+    ...buildConnectionPairQuery(requesterId, recipientId)
+  });
 
   if (exists) return { status: 400, message: 'Connection request already exists' };
 
-  const now = nowIso();
-  const connection = {
-    id: createId(),
+  const connection = new Connection({
+    requester: requesterId,
+    recipient: recipientId,
     requesterId,
     recipientId,
     status: 'pending',
-    createdAt: now,
-    updatedAt: now,
-  };
-  db.connections.push(connection);
-  await writeDb(db);
+  });
+  
+  await connection.save();
   return { status: 201, connection };
 };
 
 export const acceptRequest = async (currentUserId, requesterId) => {
-  const db = await readDb();
-  const connection = db.connections.find((item) => item.requesterId === requesterId && item.recipientId === currentUserId && item.status === 'pending');
+  if (!mongoose.Types.ObjectId.isValid(currentUserId) || !mongoose.Types.ObjectId.isValid(requesterId)) {
+    return { status: 400, message: 'Invalid user id' };
+  }
+
+  const connection = await Connection.findOne({
+    status: 'pending',
+    ...buildConnectionPairQuery(requesterId, currentUserId),
+  });
+  
   if (!connection) return { status: 404, message: 'Pending request not found' };
+
+  connection.requester = requesterId;
+  connection.recipient = currentUserId;
+  connection.requesterId = requesterId;
+  connection.recipientId = currentUserId;
+  
   connection.status = 'accepted';
-  connection.updatedAt = nowIso();
-  await writeDb(db);
+  await connection.save();
   return { status: 200, connection };
 };

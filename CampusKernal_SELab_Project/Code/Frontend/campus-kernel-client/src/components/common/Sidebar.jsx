@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Users, Settings, LogOut, LayoutDashboard, MessageSquare, Sun, Moon } from 'lucide-react';
+import { Users, Settings, LogOut, LayoutDashboard, MessageSquare, Sun, Moon, Shield } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
@@ -36,6 +36,10 @@ export default function Sidebar() {
     { name: 'Messages', path: '/messages', icon: <MessageSquare size={18} /> },
     { name: 'Settings', path: '/settings', icon: <Settings size={18} /> },
   ];
+
+  if (userData?.role === 'admin') {
+    menuItems.push({ name: 'Admin', path: '/admin', icon: <Shield size={18} /> });
+  }
 
   const userName = userData?.name || "Student";
   const userInitial = userName.charAt(0).toUpperCase();
