@@ -59,39 +59,39 @@ export default function Register() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-              <input type="text" placeholder="John Doe" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="p-3 border rounded-lg w-full focus:ring-2 focus:ring-blue-500 outline-none transition-shadow" required />
+              <input type="text" placeholder="John Doe" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="p-3 border rounded-lg w-full text-black focus:ring-2 focus:ring-blue-500 outline-none transition-shadow" required />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input type="email" placeholder="john@example.com" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="p-3 border rounded-lg w-full focus:ring-2 focus:ring-blue-500 outline-none transition-shadow" required />
+              <input type="email" placeholder="john@example.com" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="p-3 border rounded-lg w-full text-black focus:ring-2 focus:ring-blue-500 outline-none transition-shadow" required />
             </div>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-              <input type="password" placeholder="Password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} className="p-3 border rounded-lg w-full focus:ring-2 focus:ring-blue-500 outline-none transition-shadow" required />
+              <input type="password" placeholder="Password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$" title="Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number and one special character." className="p-3 border rounded-lg w-full text-black focus:ring-2 focus:ring-blue-500 outline-none transition-shadow" required />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
-              <input type="text" placeholder="e.g. India" value={formData.country} onChange={e => setFormData({...formData, country: e.target.value})} className="p-3 border rounded-lg w-full focus:ring-2 focus:ring-blue-500 outline-none transition-shadow" required />
+              <input type="text" placeholder="e.g. India" value={formData.country} onChange={e => setFormData({...formData, country: e.target.value})} className="p-3 border rounded-lg w-full text-black focus:ring-2 focus:ring-blue-500 outline-none transition-shadow" required />
             </div>
           </div>
 
           <div>
              <label className="block text-sm font-medium text-gray-700 mb-1">University Name</label>
-             <input type="text" value={formData.universityName} onChange={e => setFormData({...formData, universityName: e.target.value})} className="p-3 border rounded-lg w-full focus:ring-2 focus:ring-blue-500 outline-none transition-shadow" required />
+             <input type="text" value={formData.universityName} onChange={e => setFormData({...formData, universityName: e.target.value})} className="p-3 border rounded-lg w-full text-black focus:ring-2 focus:ring-blue-500 outline-none transition-shadow" required />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Course</label>
-            <input type="text" placeholder="e.g. B.Tech Computer Science" value={formData.course} onChange={e => setFormData({...formData, course: e.target.value})} className="p-3 border rounded-lg w-full focus:ring-2 focus:ring-blue-500 outline-none transition-shadow" required />
+            <input type="text" placeholder="e.g. B.Tech Computer Science" value={formData.course} onChange={e => setFormData({...formData, course: e.target.value})} className="p-3 border rounded-lg w-full text-black focus:ring-2 focus:ring-blue-500 outline-none transition-shadow" required />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Current Year</label>
-              <select value={formData.currentYear} onChange={e => setFormData({...formData, currentYear: Number(e.target.value)})} className="p-3 border rounded-lg w-full bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-shadow">
+              <select value={formData.currentYear} onChange={e => setFormData({...formData, currentYear: Number(e.target.value)})} className="p-3 border rounded-lg w-full bg-white text-black focus:ring-2 focus:ring-blue-500 outline-none transition-shadow">
                 <option value={1}>1st Year</option>
                 <option value={2}>2nd Year</option>
                 <option value={3}>3rd Year</option>
@@ -101,7 +101,7 @@ export default function Register() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Graduation Year</label>
-              <input type="number" placeholder="2027" value={formData.yearOfGraduation} onChange={e => setFormData({...formData, yearOfGraduation: Number(e.target.value)})} className="p-3 border rounded-lg w-full focus:ring-2 focus:ring-blue-500 outline-none transition-shadow" min="2000" max="2100" required />
+              <input type="number" placeholder="2027" value={formData.yearOfGraduation} onChange={e => setFormData({...formData, yearOfGraduation: Number(e.target.value)})} className="p-3 border rounded-lg w-full text-black focus:ring-2 focus:ring-blue-500 outline-none transition-shadow" min="2000" max="2100" required />
             </div>
           </div>
 

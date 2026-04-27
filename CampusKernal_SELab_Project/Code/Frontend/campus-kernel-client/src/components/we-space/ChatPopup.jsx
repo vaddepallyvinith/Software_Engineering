@@ -43,7 +43,7 @@ export default function ChatPopup({ isOpen, onClose, peer }) {
       setCurrentUser(meRes.data.user);
       setChatHistory(messagesRes.data);
 
-      const socket = io('http://localhost:5001');
+      const socket = io(`http://${window.location.hostname}:5001`);
       socketRef.current = socket;
       socket.emit('join', meRes.data.user._id);
       socket.on('receive_message', (incoming) => {

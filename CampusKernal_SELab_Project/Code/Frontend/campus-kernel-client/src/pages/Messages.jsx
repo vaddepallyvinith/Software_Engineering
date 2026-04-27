@@ -22,7 +22,7 @@ export default function Messages() {
 
   // Connect socket and fetch initial data
   useEffect(() => {
-    socketRef.current = io('http://localhost:5001');
+    socketRef.current = io(`http://${window.location.hostname}:5001`);
 
     const initialize = async () => {
       try {

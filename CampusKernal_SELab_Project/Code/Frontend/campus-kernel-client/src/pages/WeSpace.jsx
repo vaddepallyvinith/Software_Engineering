@@ -1,19 +1,41 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Globe, Users, Video, PlusCircle, Search, MapPin, Activity, Hash, MessageCircle, ArrowUpRight, VideoOff, Mic, MicOff, MonitorUp, PhoneOff, Send, Pencil, Trash2 } from 'lucide-react';
 import ChatPopup from '../components/we-space/ChatPopup';
 import io from 'socket.io-client';
 import { useWebRTC } from '../hooks/useWebRTC';
 import api from '../services/api';
 
-const PeerVideoBox = ({ stream, name }) => {
+// Dedicated audio element for reliable peer audio playback
+const PeerAudio = ({ stream }) => {
+  const audioRef = useRef(null);
+  useEffect(() => {
+    if (audioRef.current && stream) {
+      audioRef.current.srcObject = stream;
+      audioRef.current.play().catch(e => console.log('Peer audio play blocked:', e));
+    }
+  }, [stream]);
+  return <audio ref={audioRef} autoPlay playsInline style={{ display: 'none' }} />;
+};
+
+const PeerVideoBox = ({ stream, name, isScreenShare, anyScreenShare }) => {
   const ref = useRef(null);
   useEffect(() => {
-    if (ref.current && stream) ref.current.srcObject = stream;
+    if (ref.current && stream) {
+      ref.current.srcObject = stream;
+      ref.current.play().catch(e => console.log("Play blocked:", e));
+    }
   }, [stream]);
   return (
-    <div className="relative w-full h-full bg-slate-800 rounded-lg overflow-hidden shadow-sm flex items-center justify-center">
-      <video ref={ref} autoPlay playsInline className="w-full h-full object-cover scale-x-[-1]"></video>
-      <div className="absolute bottom-2 left-2 bg-slate-900/70 text-white font-semibold text-[10px] px-2 py-1 rounded backdrop-blur">{name || "Peer"}</div>
+    <div style={{ display: (anyScreenShare && !isScreenShare) ? 'none' : 'flex' }} className={`relative bg-slate-800 rounded-lg overflow-hidden shadow-sm items-center justify-center ${isScreenShare ? 'w-full flex-1' : 'w-full h-full'}`}>
+      <video ref={ref} autoPlay playsInline className={`w-full h-full ${isScreenShare ? 'object-contain' : 'object-cover scale-x-[-1]'}`}></video>
+      <div className="absolute bottom-2 left-2 bg-slate-900/70 text-white font-semibold text-[10px] px-2 py-1 rounded backdrop-blur z-20">{name || "Peer"} {isScreenShare && "(Sharing)"}</div>
+      {!isScreenShare && (!stream || stream.getVideoTracks().length === 0) && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900 z-10">
+             <div className="w-20 h-20 bg-slate-800/80 rounded-full flex items-center justify-center text-slate-500 shadow-lg border border-slate-700">
+               <VideoOff size={32} />
+             </div>
+          </div>
+      )}
     </div>
   );
 };
@@ -21,7 +43,6 @@ const PeerVideoBox = ({ stream, name }) => {
 const StudyRoomLive = ({ room, onLeave, currentUser, socket }) => {
   const [activeTab, setActiveTab] = useState('participants');
   const [micOn, setMicOn] = useState(false);
-  const [videoOn, setVideoOn] = useState(true);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   
@@ -34,32 +55,36 @@ const StudyRoomLive = ({ room, onLeave, currentUser, socket }) => {
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [screenShareOwner, setScreenShareOwner] = useState(null);
 
+  const hasJoinedRef = useRef(false);
+
   useEffect(() => {
     let streamRef = null;
     const initMedia = async () => {
       try {
         let stream;
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-           stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+           stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
         } else {
            stream = new MediaStream(); 
         }
         streamRef = stream;
-        setLocalStream(stream);
         
-        if (videoRef.current && stream.getVideoTracks().length > 0) {
-          videoRef.current.srcObject = stream;
-        }
+        // Start with mic off
+        stream.getAudioTracks().forEach(t => t.enabled = false);
+        
+        setLocalStream(stream);
 
-        // Only explicitly join the room signaling channel once stream states are fully resolved
-        if (socket && currentUser) {
+        // Only emit join once to prevent duplicate participants
+        if (socket && currentUser && !hasJoinedRef.current) {
+            hasJoinedRef.current = true;
             socket.emit('join_study_room', { roomId: room._id, userId: currentUser._id });
         }
       } catch (err) {
         console.error("Media permission denied or unavailable", err);
         const fallbackStream = new MediaStream();
         setLocalStream(fallbackStream);
-        if (socket && currentUser) {
+        if (socket && currentUser && !hasJoinedRef.current) {
+            hasJoinedRef.current = true;
             socket.emit('join_study_room', { roomId: room._id, userId: currentUser._id });
         }
       }
@@ -74,10 +99,9 @@ const StudyRoomLive = ({ room, onLeave, currentUser, socket }) => {
 
   useEffect(() => {
     if (localStream) {
-      localStream.getVideoTracks().forEach(t => t.enabled = videoOn);
       localStream.getAudioTracks().forEach(t => t.enabled = micOn);
     }
-  }, [videoOn, micOn, localStream]);
+  }, [micOn, localStream]);
 
   useEffect(() => {
     if (!socket) return;
@@ -112,13 +136,12 @@ const StudyRoomLive = ({ room, onLeave, currentUser, socket }) => {
          const screenTrack = screenStream.getVideoTracks()[0];
          
          screenTrack.onended = () => {
-            const camTrack = localStream.getVideoTracks()[0];
             if (videoRef.current) {
-              videoRef.current.classList.add('scale-x-[-1]');
               videoRef.current.srcObject = localStream;
             }
-            replaceVideoTrack(camTrack);
+            replaceVideoTrack(null);
             setIsScreenSharing(false);
+            setScreenShareOwner(null);
             socket.emit('screen_share_status', { roomId: room._id, isActive: false, socketId: socket.id });
          };
 
@@ -129,16 +152,16 @@ const StudyRoomLive = ({ room, onLeave, currentUser, socket }) => {
          }
          replaceVideoTrack(screenTrack);
          setIsScreenSharing(true);
+         setScreenShareOwner(socket.id);
          socket.emit('screen_share_status', { roomId: room._id, isActive: true, socketId: socket.id });
        } catch(e) { console.error("Screen share err:", e); }
     } else {
-       const camTrack = localStream.getVideoTracks()[0];
        if (videoRef.current) {
-         videoRef.current.classList.add('scale-x-[-1]');
          videoRef.current.srcObject = localStream;
        }
-       replaceVideoTrack(camTrack);
+       replaceVideoTrack(null);
        setIsScreenSharing(false);
+       setScreenShareOwner(null);
        socket.emit('screen_share_status', { roomId: room._id, isActive: false, socketId: socket.id });
     }
   };
@@ -185,13 +208,13 @@ const StudyRoomLive = ({ room, onLeave, currentUser, socket }) => {
         <div className="lg:flex-[3] bg-black rounded-lg relative overflow-hidden group shadow-inner min-h-[400px]">
           
           {/* DYNAMIC SPATIAL GRID RENDERING ALL PEOPLE CAMERA */}
-          <div className={`w-full h-full p-2 grid gap-2 ${Object.keys(peers).length === 0 ? 'grid-cols-1' : Object.keys(peers).length <= 3 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+          <div className={`w-full h-full p-2 gap-2 ${screenShareOwner ? 'flex flex-col' : `grid ${Object.keys(peers).length === 0 ? 'grid-cols-1' : Object.keys(peers).length <= 3 ? 'grid-cols-2' : 'grid-cols-3'}`}`}>
             
             {/* LOCAL FEED */}
-            <div className="relative w-full h-full bg-slate-800 rounded-lg overflow-hidden shadow-sm flex items-center justify-center">
-              <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover scale-x-[-1]"></video>
-              <div className="absolute bottom-2 left-2 bg-slate-900/70 text-white font-semibold text-[10px] px-2 py-1 rounded backdrop-blur">You</div>
-              {!videoOn && (
+            <div style={{ display: (screenShareOwner && !isScreenSharing) ? 'none' : 'flex' }} className={`relative bg-slate-800 rounded-lg overflow-hidden shadow-sm items-center justify-center ${isScreenSharing ? 'w-full flex-1' : 'w-full h-full'}`}>
+              <video ref={videoRef} autoPlay muted playsInline className={`w-full h-full ${isScreenSharing ? 'object-contain' : 'object-cover'}`}></video>
+              <div className="absolute bottom-2 left-2 bg-slate-900/70 text-white font-semibold text-[10px] px-2 py-1 rounded backdrop-blur z-20">You {isScreenSharing && "(Sharing)"}</div>
+              {!isScreenSharing && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900 z-10">
                    <div className="w-20 h-20 bg-slate-800/80 rounded-full flex items-center justify-center text-slate-500 shadow-lg border border-slate-700">
                      <VideoOff size={32} />
@@ -202,18 +225,20 @@ const StudyRoomLive = ({ room, onLeave, currentUser, socket }) => {
 
             {/* PEER FEEDS (Rendered dynamically as WebRTC mesh populates) */}
             {Object.entries(peers).map(([socketId, stream]) => (
-                <PeerVideoBox key={socketId} stream={stream} name={"Peer Member"} />
+                <PeerVideoBox key={socketId} stream={stream} name={"Peer Member"} isScreenShare={screenShareOwner === socketId} anyScreenShare={!!screenShareOwner} />
             ))}
 
           </div>
+
+          {/* Hidden audio elements for each peer - ensures audio plays even if video is hidden */}
+          {Object.entries(peers).map(([socketId, stream]) => (
+            <PeerAudio key={`audio-${socketId}`} stream={stream} />
+          ))}
           
           {/* Floating Action Controls */}
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-slate-900/80 backdrop-blur-md border border-slate-700/50 p-2.5 rounded-2xl flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-all shadow-xl z-50">
              <button onClick={() => setMicOn(!micOn)} className={`p-4 rounded-full transition-transform hover:scale-105 active:scale-95 ${micOn ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-red-500 text-white hover:bg-red-600'}`}>
                 {micOn ? <Mic size={22} /> : <MicOff size={22} />}
-             </button>
-             <button onClick={() => setVideoOn(!videoOn)} className={`p-4 rounded-full transition-transform hover:scale-105 active:scale-95 ${videoOn ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-red-500 text-white hover:bg-red-600'}`}>
-                {videoOn ? <Video size={22} /> : <VideoOff size={22} />}
              </button>
              <button onClick={handleToggleScreenShare} className={`p-4 rounded-full transition-transform hover:scale-105 active:scale-95 ${isScreenSharing ? 'bg-blue-600 text-white' : (screenShareOwner ? 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-50' : 'bg-slate-700 text-white hover:bg-slate-600')}`}>
                 <MonitorUp size={22} />
@@ -434,7 +459,7 @@ export default function WeSpace() {
     
     fetchData();
 
-    const newSocket = io('http://localhost:5001');
+    const newSocket = io(`http://${window.location.hostname}:5001`);
     socketRef.current = newSocket;
 
     newSocket.on('room_updated', (updatedRoom) => {
@@ -663,7 +688,7 @@ export default function WeSpace() {
                 <div className="col-span-2 text-center text-slate-400 py-4">No active rooms right now. Create one to get started!</div>
               )}
               {rooms.map(room => {
-                  const isOwner = currentUser && room.createdBy === currentUser._id;
+                  const isOwner = currentUser && (room.createdBy === currentUser._id || currentUser.role === 'admin');
                   return (
                   <div key={room._id} className="bg-white dark:bg-slate-900 rounded-xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow group flex flex-col h-full">
                     <div className="flex justify-between items-start mb-4">

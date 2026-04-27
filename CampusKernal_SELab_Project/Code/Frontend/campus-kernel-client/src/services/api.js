@@ -1,7 +1,14 @@
 import axios from 'axios';
 
+// Dynamically resolve backend URL: works with both localhost and port-forwarding
+const getBaseURL = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+  const host = window.location.hostname;
+  return `http://${host}:5001/api`;
+};
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5001/api',
+  baseURL: getBaseURL(),
 });
 
 const clearSession = () => {

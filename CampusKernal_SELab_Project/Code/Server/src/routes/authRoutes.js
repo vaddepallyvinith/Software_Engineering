@@ -9,6 +9,12 @@ const router = express.Router();
 
 router.post('/register', async (req, res) => {
   try {
+    const password = String(req.body.password || '');
+    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!strongPasswordRegex.test(password)) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number and one special character.' });
+    }
+
     const user = await createUser(req.body);
     return res.status(201).json({
       message: 'Account created successfully!',
